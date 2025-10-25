@@ -2049,6 +2049,7 @@ const PricingTab = ({ themeClasses, user, language }) => {
               >
                 <PricingCard
                   product={product}
+                  hasActiveSubscription={hasActiveSubscription(product.id)}
                   className={`transform hover:scale-105 transition-all duration-300 ${
                     hasActiveSubscription(product.id) ? 'ring-2 ring-emerald-500' : ''
                   }`}

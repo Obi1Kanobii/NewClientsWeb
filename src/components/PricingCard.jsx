@@ -4,13 +4,17 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 
-const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }) => {
+const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '', hasActiveSubscription = false }) => {
   const { createCheckoutSession, loading, error } = useStripe();
   const { user, isAuthenticated } = useAuth();
   const { language } = useLanguage();
   const { themeClasses } = useTheme();
   const [selectedPrice, setSelectedPrice] = useState(selectedPriceId || product.prices?.[0]?.id);
   const [showUSD, setShowUSD] = useState(false);
+  
+  // Check if this is a consultation product (can always be purchased)
+  const isConsultation = product.name.toLowerCase().includes('consultation') || 
+                         product.nameHebrew?.includes('יעוץ');
 
   const handlePriceSelect = (priceId) => {
     setSelectedPrice(priceId);
@@ -22,6 +26,14 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }
   const handlePurchase = async () => {
     if (!isAuthenticated) {
       alert(language === 'hebrew' ? 'יש להתחבר תחילה' : 'Please log in first');
+      return;
+    }
+
+    // Check if user has active subscription for this product (except consultations)
+    if (hasActiveSubscription && !isConsultation) {
+      alert(language === 'hebrew' ? 
+        'יש לך כבר מנוי פעיל לתוכנית זו' : 
+        'You already have an active subscription for this plan');
       return;
     }
 
@@ -118,7 +130,20 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }
         </div>
 
         {/* Price Options */}
-        {product.prices && product.prices.length > 1 ? (
+        {hasActiveSubscription && !isConsultation ? (
+          // Active subscription message (hide pricing)
+          <div className="mb-6 text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+            <div className={`text-lg font-semibold ${themeClasses.textPrimary} mb-2`}>
+              ✅ {language === 'hebrew' ? 'מנוי פעיל' : 'Active Subscription'}
+            </div>
+            <div className={`text-sm ${themeClasses.textSecondary}`}>
+              {language === 'hebrew' ? 
+                'יש לך כבר מנוי פעיל לתוכנית זו' : 
+                'You already have an active subscription for this plan'
+              }
+            </div>
+          </div>
+        ) : product.prices && product.prices.length > 1 ? (
           <div className="mb-6">
             <label className={`block text-sm font-medium ${themeClasses.textSecondary} mb-3`}>
               {language === 'hebrew' ? 'בחר תוכנית:' : 'Choose Plan:'}
@@ -160,7 +185,7 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }
                       {formatPrice(price)}
                       {price.interval && (
                         <span className={`text-sm ${themeClasses.textMuted}`}>
-                          /{price.interval}
+                          /{language === 'hebrew' ? (price.interval === 'month' ? 'חודש' : price.interval) : price.interval}
                         </span>
                       )}
                     </div>
@@ -184,7 +209,7 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }
                 </span>
                 {product.prices[0].interval && (
                   <span className={`${themeClasses.textSecondary} ml-1`}>
-                    /{product.prices[0].interval}
+                    /{language === 'hebrew' ? (product.prices[0].interval === 'month' ? 'חודש' : product.prices[0].interval) : product.prices[0].interval}
                   </span>
                 )}
                 {product.prices[0].commitment && (
@@ -214,12 +239,14 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }
         {/* CTA Button */}
         <button
           onClick={handlePurchase}
-          disabled={loading || !selectedPrice}
+          disabled={loading || !selectedPrice || (hasActiveSubscription && !isConsultation)}
           className={`
             w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 transform hover:scale-105
-            ${selectedPriceObj?.popular || hasPopularPrice
-              ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg'
-              : 'bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900'
+            ${hasActiveSubscription && !isConsultation
+              ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+              : selectedPriceObj?.popular || hasPopularPrice
+                ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg'
+                : 'bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900'
             }
             disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
           `}
@@ -229,6 +256,8 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }
               <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
               {language === 'hebrew' ? 'טוען...' : 'Loading...'}
             </div>
+          ) : hasActiveSubscription && !isConsultation ? (
+            language === 'hebrew' ? 'מנוי פעיל' : 'Active Subscription'
           ) : (
             <>
               {product.category === 'consultation' 
