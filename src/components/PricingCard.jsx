@@ -1,0 +1,232 @@
+import React, { useState } from 'react';
+import { useStripe } from '../context/StripeContext';
+import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
+import { useTheme } from '../context/ThemeContext';
+
+const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }) => {
+  const { createCheckoutSession, loading, error } = useStripe();
+  const { user, isAuthenticated } = useAuth();
+  const { language } = useLanguage();
+  const { themeClasses } = useTheme();
+  const [selectedPrice, setSelectedPrice] = useState(selectedPriceId || product.prices?.[0]?.id);
+
+  const handlePriceSelect = (priceId) => {
+    setSelectedPrice(priceId);
+    if (onPriceSelect) {
+      onPriceSelect(priceId, product);
+    }
+  };
+
+  const handlePurchase = async () => {
+    if (!isAuthenticated) {
+      alert(language === 'hebrew' ? 'יש להתחבר תחילה' : 'Please log in first');
+      return;
+    }
+
+    if (!selectedPrice) {
+      alert(language === 'hebrew' ? 'אנא בחר תוכנית מחיר' : 'Please select a pricing option');
+      return;
+    }
+
+    try {
+      await createCheckoutSession(selectedPrice, {
+        customerId: user?.id,
+        customerEmail: user?.email,
+      });
+    } catch (error) {
+      console.error('Purchase error:', error);
+      alert(error.message || (language === 'hebrew' ? 'שגיאה בתהליך התשלום' : 'Payment error occurred'));
+    }
+  };
+
+  const formatPrice = (amount, currency = 'USD') => {
+    if (!amount) return 'Contact for pricing';
+    
+    // Amount is in cents, convert to dollars
+    const price = amount / 100;
+    
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency.toUpperCase(),
+      minimumFractionDigits: price % 1 === 0 ? 0 : 2
+    }).format(price);
+  };
+
+  const getPopularBadge = () => (
+    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+      <span className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 py-1 rounded-full text-sm font-medium shadow-lg">
+        {language === 'hebrew' ? 'פופולרי' : 'Popular'}
+      </span>
+    </div>
+  );
+
+  const getDiscountBadge = (discount) => (
+    <div className="absolute -top-2 -right-2 z-10">
+      <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg">
+        {discount}
+      </span>
+    </div>
+  );
+
+  // Find if any price is marked as popular
+  const hasPopularPrice = product.prices?.some(price => price.popular);
+  const selectedPriceObj = product.prices?.find(price => price.id === selectedPrice);
+
+  return (
+    <div className={`relative bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ${className}`}>
+      {hasPopularPrice && selectedPriceObj?.popular && getPopularBadge()}
+      {selectedPriceObj?.discount && getDiscountBadge(selectedPriceObj.discount)}
+
+      <div className="p-6">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+            {product.name}
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">
+            {product.description}
+          </p>
+        </div>
+
+        {/* Price Options */}
+        {product.prices && product.prices.length > 1 ? (
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              {language === 'hebrew' ? 'בחר תוכנית:' : 'Choose Plan:'}
+            </label>
+            <div className="space-y-2">
+              {product.prices.map((price) => (
+                <label
+                  key={price.id}
+                  className={`
+                    flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors
+                    ${selectedPrice === price.id 
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                    }
+                  `}
+                >
+                  <div className="flex items-center">
+                    <input
+                      type="radio"
+                      name={`price-${product.id}`}
+                      value={price.id}
+                      checked={selectedPrice === price.id}
+                      onChange={() => handlePriceSelect(price.id)}
+                      className="mr-3 text-blue-600"
+                    />
+                    <div>
+                      <div className="font-medium text-gray-900 dark:text-white">
+                        {price.name}
+                      </div>
+                      {price.commitment && (
+                        <div className="text-xs text-gray-500">
+                          {price.commitment} month commitment
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-gray-900 dark:text-white">
+                      {formatPrice(price.amount, 'USD')}
+                      {price.interval && (
+                        <span className="text-sm text-gray-500">
+                          /{price.interval}
+                        </span>
+                      )}
+                    </div>
+                    {price.discount && (
+                      <div className="text-xs text-green-600 font-medium">
+                        {price.discount}
+                      </div>
+                    )}
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+        ) : (
+          // Single price display
+          <div className="text-center mb-6">
+            {product.prices?.[0] && (
+              <div>
+                <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {formatPrice(product.prices[0].amount, 'USD')}
+                </span>
+                {product.prices[0].interval && (
+                  <span className="text-gray-600 dark:text-gray-400 ml-1">
+                    /{product.prices[0].interval}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Features */}
+        {product.features && (
+          <ul className="space-y-3 mb-6 text-sm">
+            {product.features.map((feature, index) => (
+              <li key={index} className="flex items-center text-gray-600 dark:text-gray-400">
+                <svg className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                {feature}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* CTA Button */}
+        <button
+          onClick={handlePurchase}
+          disabled={loading || !selectedPrice}
+          className={`
+            w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 transform hover:scale-105
+            ${selectedPriceObj?.popular || hasPopularPrice
+              ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg'
+              : 'bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900'
+            }
+            disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
+          `}
+        >
+          {loading ? (
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+              {language === 'hebrew' ? 'טוען...' : 'Loading...'}
+            </div>
+          ) : (
+            <>
+              {product.category === 'consultation' 
+                ? (language === 'hebrew' ? 'קבע יעוץ' : 'Book Consultation')
+                : (language === 'hebrew' ? 'התחל עכשיו' : 'Get Started')
+              }
+            </>
+          )}
+        </button>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mt-3 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-red-600 dark:text-red-400 text-sm">
+            {error}
+          </div>
+        )}
+
+        {/* Additional Info */}
+        {product.category === 'consultation' && (
+          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <p className="text-xs text-blue-700 dark:text-blue-300">
+              {language === 'hebrew' 
+                ? '💡 יועץ התזונה שלנו יחזור אליך תוך 24 שעות לתיאום הפגישה'
+                : '💡 Our nutrition expert will contact you within 24 hours to schedule your session'
+              }
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default PricingCard;
