@@ -2,57 +2,18 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
+import Navigation from '../components/Navigation';
 
 const AboutPage = () => {
   const { language, direction, toggleLanguage } = useLanguage();
   const { isDarkMode, toggleTheme, themeClasses } = useTheme();
 
   return (
-    <div className={`min-h-screen ${themeClasses.bgPrimary} flex language-transition language-text-transition`} dir={direction}>
-      {/* Header Section */}
-      <div className="w-full">
-        {/* Navigation Bar */}
-        <nav className={`${themeClasses.bgCard} ${themeClasses.shadowCard} border-b ${themeClasses.borderPrimary} p-4`}>
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <Link to="/" className="flex items-center">
-              <img src="/favicon.ico" alt="BetterChoice Logo" className="w-10 h-10 mr-3 rounded-lg shadow-md" />
-              <span className={`${themeClasses.textPrimary} text-xl font-bold`}>BetterChoice</span>
-            </Link>
-            
-            <div className="flex items-center space-x-4">
-              {/* Language Control */}
-              <button 
-                onClick={toggleLanguage}
-                className={`${themeClasses.bgSecondary} hover:${themeClasses.bgPrimary} rounded-xl p-2 transition-all duration-200 shadow-md`}
-              >
-                <div className="flex items-center">
-                  <svg className="w-4 h-4 text-blue-400 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clipRule="evenodd"/>
-                  </svg>
-                  <span className="text-blue-400 text-sm font-medium">{language === 'hebrew' ? 'עב' : 'En'}</span>
-                </div>
-              </button>
+    <div className={`min-h-screen ${themeClasses.bgPrimary} language-transition language-text-transition`} dir={direction}>
+      {/* Navigation */}
+      <Navigation />
 
-              {/* Theme Control */}
-              <button 
-                onClick={toggleTheme}
-                className={`${themeClasses.bgCard} border border-emerald-500/20 rounded-full p-2 hover:${themeClasses.bgSecondary} transition-all duration-200 shadow-lg shadow-emerald-500/10`}
-              >
-                {isDarkMode ? (
-                  <svg className="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd"/>
-                  </svg>
-                ) : (
-                  <svg className="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
-                  </svg>
-                )}
-              </button>
-            </div>
-          </div>
-        </nav>
-
-        {/* Hero Section */}
+      {/* Hero Section */}
         <div className="relative bg-gradient-to-b from-slate-800 via-slate-900 to-black py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             {/* Logo */}
@@ -423,7 +384,6 @@ const AboutPage = () => {
             </div>
           </div>
         </div>
-      </div>
     </div>
   );
 };

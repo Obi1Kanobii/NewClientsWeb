@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
+import Navigation from '../components/Navigation';
 import { supabase } from '../supabase/supabaseClient';
 
 function RecipesPage() {
@@ -846,44 +847,8 @@ function RecipesPage() {
 
   return (
     <div className={`min-h-screen ${themeClasses.bgPrimary} language-transition language-text-transition`} dir={direction}>
-      {/* Header */}
-      <header className={`${isDarkMode ? themeClasses.bgHeader : 'bg-gradient-to-r from-emerald-500 to-teal-600'} shadow-xl border-b ${themeClasses.borderPrimary} backdrop-blur-sm`}>
-        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            {/* Logo Section */}
-            <div className="flex items-center">
-              <Link to="/" className="flex items-center">
-                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-emerald-500/25">
-                  <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/>
-                  </svg>
-                </div>
-                <div className="flex flex-col">
-                  <h1 className={`text-2xl font-bold ${isDarkMode ? themeClasses.textPrimary : 'text-white'} leading-tight`}>BetterChoice</h1>
-                  <p className="text-emerald-300 text-xs font-medium">{t.tagline}</p>
-                </div>
-              </Link>
-            </div>
-
-            {/* Page Title */}
-            <div className="flex-1 text-center">
-              <h1 className={`text-3xl font-bold ${isDarkMode ? themeClasses.textPrimary : 'text-white'}`}>
-                {tr.title}
-              </h1>
-            </div>
-
-            {/* Back Button */}
-            <div className="flex items-center">
-              <Link 
-                to="/" 
-                className={`${isDarkMode ? themeClasses.bgSecondary : 'bg-white/90'} hover:${isDarkMode ? themeClasses.bgPrimary : 'bg-white'} ${isDarkMode ? themeClasses.textPrimary : 'text-gray-800'} px-4 py-2 rounded-xl font-medium text-sm transition-all duration-300 border ${isDarkMode ? themeClasses.borderPrimary : 'border-white/20'} backdrop-blur-sm`}
-              >
-                {language === 'hebrew' ? 'חזרה' : 'Back'}
-              </Link>
-            </div>
-          </div>
-        </nav>
-      </header>
+      {/* Navigation */}
+      <Navigation />
 
       {/* Main Content */}
       <main className="flex-1">

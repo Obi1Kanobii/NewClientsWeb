@@ -1505,8 +1505,23 @@ export const useLanguage = () => {
 };
 
 export const LanguageProvider = ({ children }) => {
-  const [language, setLanguage] = useState('hebrew'); // Default to Hebrew
-  const [direction, setDirection] = useState('rtl'); // Default to RTL for Hebrew
+  const [language, setLanguage] = useState(() => {
+    // Check localStorage first, then default to English
+    const savedLanguage = localStorage.getItem('language');
+    if (savedLanguage) {
+      return savedLanguage;
+    }
+    return 'english'; // Default to English
+  });
+  
+  const [direction, setDirection] = useState(() => {
+    const savedLanguage = localStorage.getItem('language');
+    if (savedLanguage) {
+      return savedLanguage === 'hebrew' ? 'rtl' : 'ltr';
+    }
+    return 'ltr'; // Default to LTR for English
+  });
+  
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   const toggleLanguage = () => {
@@ -1527,12 +1542,14 @@ export const LanguageProvider = ({ children }) => {
     
     // Start transition with simple timing
     setTimeout(() => {
-      if (language === 'hebrew') {
-        setLanguage('english');
-        setDirection('ltr');
-      } else {
+      if (language === 'english') {
         setLanguage('hebrew');
         setDirection('rtl');
+        localStorage.setItem('language', 'hebrew');
+      } else {
+        setLanguage('english');
+        setDirection('ltr');
+        localStorage.setItem('language', 'english');
       }
       
       // Remove overlay and reset transition state
