@@ -51,37 +51,71 @@ const PaymentCancelPage = () => {
   ];
 
   return (
-    <div className={`min-h-screen ${themeClasses.background} ${themeClasses.text}`} dir={direction}>
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
+    <div className={`min-h-screen relative overflow-hidden ${themeClasses.background} ${themeClasses.text}`} dir={direction}>
+      {/* Animated Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -inset-10 opacity-20">
+          <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-orange-400 rounded-full mix-blend-multiply filter blur-xl animate-bounce animation-delay-2000"></div>
+          <div className="absolute top-3/4 right-1/4 w-32 h-32 bg-yellow-400 rounded-full mix-blend-multiply filter blur-xl animate-bounce animation-delay-4000"></div>
+          <div className="absolute top-1/2 left-1/2 w-32 h-32 bg-red-400 rounded-full mix-blend-multiply filter blur-xl animate-bounce animation-delay-6000"></div>
+        </div>
+        
+        {/* Floating particles */}
+        <div className="absolute inset-0">
+          {[...Array(10)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-2 h-2 bg-orange-400 rounded-full opacity-30 animate-float"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 3}s`,
+                animationDuration: `${3 + Math.random() * 2}s`
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="relative z-10 container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
           {/* Cancel Icon Animation */}
-          <div className="text-center mb-8">
-            <div className="relative mx-auto w-24 h-24 mb-6">
-              <div className="absolute inset-0 bg-red-100 dark:bg-red-900/20 rounded-full animate-pulse"></div>
-              <div className="relative flex items-center justify-center w-24 h-24 bg-red-500 rounded-full">
-                <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="text-center mb-12 animate-fadeInUp">
+            <div className="relative mx-auto w-32 h-32 mb-8">
+              <div className="absolute inset-0 bg-orange-100 dark:bg-orange-900/30 rounded-full animate-ping"></div>
+              <div className="absolute inset-2 bg-orange-200 dark:bg-orange-800/50 rounded-full animate-pulse"></div>
+              <div className="relative flex items-center justify-center w-32 h-32 bg-gradient-to-br from-orange-400 to-red-500 rounded-full shadow-2xl shadow-orange-500/50">
+                <svg className="w-16 h-16 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </div>
+              
+              {/* Gentle emojis */}
+              <div className="absolute -top-4 -left-4 text-2xl animate-bounce animation-delay-1000">😔</div>
+              <div className="absolute -top-2 -right-6 text-xl animate-bounce animation-delay-2000">💭</div>
+              <div className="absolute -bottom-2 -left-6 text-xl animate-bounce animation-delay-3000">🤷‍♂️</div>
+              <div className="absolute -bottom-4 -right-4 text-2xl animate-bounce animation-delay-4000">💡</div>
             </div>
 
-            <h1 className="text-4xl font-bold text-red-600 dark:text-red-400 mb-4">
-              {language === 'hebrew' ? '❌ תשלום בוטל' : '❌ Payment Cancelled'}
-            </h1>
-            
-            <p className="text-xl text-gray-600 dark:text-gray-400 mb-2">
-              {language === 'hebrew' 
-                ? 'אין בעיה, זה קורה 😊' 
-                : 'No worries, it happens 😊'
-              }
-            </p>
-            
-            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-              {language === 'hebrew' 
-                ? 'התשלום שלך בוטל ולא חויבת בכלום. אתה יכול לנסות שוב בכל עת או לבחור תוכנית אחרת.'
-                : 'Your payment was cancelled and you haven\'t been charged. You can try again anytime or choose a different plan.'
-              }
-            </p>
+            <div className="space-y-4 animate-slideInUp animation-delay-500">
+              <h1 className="text-5xl md:text-6xl font-black bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 bg-clip-text text-transparent mb-6">
+                {language === 'hebrew' ? '❌ תשלום בוטל' : '❌ Payment Cancelled'}
+              </h1>
+              
+              <p className="text-2xl md:text-3xl font-semibold text-gray-700 dark:text-gray-300 mb-4">
+                {language === 'hebrew' 
+                  ? 'אין בעיה, זה קורה 😊' 
+                  : 'No worries, it happens 😊'
+                }
+              </p>
+              
+              <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">
+                {language === 'hebrew' 
+                  ? 'התשלום שלך בוטל ולא חויבת בכלום. אתה יכול לנסות שוב בכל עת או לבחור תוכנית אחרת. אנחנו כאן לעזור!'
+                  : 'Your payment was cancelled and you haven\'t been charged. You can try again anytime or choose a different plan. We\'re here to help!'
+                }
+              </p>
+            </div>
           </div>
 
           {/* Why This Happened */}
@@ -128,30 +162,45 @@ const PaymentCancelPage = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="space-y-4 mb-8">
+          <div className="space-y-6 mb-8 animate-fadeInUp animation-delay-1500">
             <Link
-              to="/pricing"
-              className="block w-full text-center bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105"
+              to="/profile"
+              className="group relative overflow-hidden bg-gradient-to-r from-blue-500 via-purple-600 to-indigo-600 hover:from-blue-600 hover:via-purple-700 hover:to-indigo-700 text-white font-bold py-6 px-8 rounded-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 shadow-2xl hover:shadow-purple-500/25 block text-center"
             >
-              <span className="text-xl mr-2">🔄</span>
-              {language === 'hebrew' ? 'נסה שוב' : 'Try Again'}
+              <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+              <div className="relative flex items-center justify-center space-x-2">
+                <span className="text-2xl">🔄</span>
+                <span className="text-xl">
+                  {language === 'hebrew' ? 'נסה שוב' : 'Try Again'}
+                </span>
+              </div>
             </Link>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Link
                 to="/"
-                className="text-center bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200"
+                className="group relative overflow-hidden bg-white/10 dark:bg-gray-800/50 backdrop-blur-xl border-2 border-gray-300/30 dark:border-gray-600/30 hover:border-gray-400/50 dark:hover:border-gray-500/50 text-gray-700 dark:text-gray-200 font-bold py-6 px-8 rounded-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 shadow-xl text-center"
               >
-                <span className="text-lg mr-2">🏠</span>
-                {language === 'hebrew' ? 'דף הבית' : 'Home'}
+                <div className="absolute inset-0 bg-gradient-to-r from-gray-200/20 to-gray-300/20 dark:from-gray-700/20 dark:to-gray-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative flex items-center justify-center space-x-2">
+                  <span className="text-2xl">🏠</span>
+                  <span className="text-lg">
+                    {language === 'hebrew' ? 'דף הבית' : 'Home'}
+                  </span>
+                </div>
               </Link>
               
               <a
                 href="mailto:support@betterchoice.co.il"
-                className="text-center bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200"
+                className="group relative overflow-hidden bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-bold py-6 px-8 rounded-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 shadow-2xl hover:shadow-emerald-500/25 text-center"
               >
-                <span className="text-lg mr-2">💬</span>
-                {language === 'hebrew' ? 'יצירת קשר' : 'Contact Us'}
+                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                <div className="relative flex items-center justify-center space-x-2">
+                  <span className="text-2xl">💬</span>
+                  <span className="text-lg">
+                    {language === 'hebrew' ? 'יצירת קשר' : 'Contact Us'}
+                  </span>
+                </div>
               </a>
             </div>
           </div>
