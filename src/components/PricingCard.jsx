@@ -10,6 +10,7 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }
   const { language } = useLanguage();
   const { themeClasses } = useTheme();
   const [selectedPrice, setSelectedPrice] = useState(selectedPriceId || product.prices?.[0]?.id);
+  const [showUSD, setShowUSD] = useState(false);
 
   const handlePriceSelect = (priceId) => {
     setSelectedPrice(priceId);
@@ -40,17 +41,28 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }
     }
   };
 
-  const formatPrice = (amount, currency = 'USD') => {
-    if (!amount) return 'Contact for pricing';
+  const formatPrice = (priceObj) => {
+    if (!priceObj) return 'Contact for pricing';
     
-    // Amount is in cents, convert to dollars
-    const price = amount / 100;
+    const currentAmount = showUSD ? priceObj.amountUSD : priceObj.amount;
+    const currentCurrency = showUSD ? 'USD' : 'ILS';
     
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency.toUpperCase(),
-      minimumFractionDigits: price % 1 === 0 ? 0 : 2
-    }).format(price);
+    if (!currentAmount) return 'Contact for pricing';
+    
+    // Amount is in cents/agorot, convert to main currency
+    const price = currentAmount / 100;
+    
+    if (currentCurrency === 'ILS') {
+      // Format Israeli Shekel with ₪ symbol
+      return `₪${price.toLocaleString('he-IL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    } else {
+      // Format USD with $ symbol
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: price % 1 === 0 ? 0 : 2
+      }).format(price);
+    }
   };
 
   const getPopularBadge = () => (
@@ -81,12 +93,28 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }
       <div className="p-6">
         {/* Header */}
         <div className="text-center mb-6">
-          <h3 className={`text-xl font-bold ${themeClasses.textPrimary} mb-2`}>
-            {product.name}
-          </h3>
-          <p className={`${themeClasses.textSecondary} text-sm`}>
-            {product.description}
-          </p>
+          <div className="flex justify-between items-start mb-4">
+            <div className="flex-1">
+              <h3 className={`text-xl font-bold ${themeClasses.textPrimary} mb-2`}>
+                {product.name}
+              </h3>
+              <p className={`${themeClasses.textSecondary} text-sm`}>
+                {product.description}
+              </p>
+            </div>
+            
+            {/* Currency Switcher */}
+            <button
+              onClick={() => setShowUSD(!showUSD)}
+              className={`ml-4 px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
+                showUSD 
+                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' 
+                  : 'bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200'
+              } hover:scale-105`}
+            >
+              {showUSD ? '$' : '₪'}
+            </button>
+          </div>
         </div>
 
         {/* Price Options */}
@@ -129,7 +157,7 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }
                   </div>
                   <div className="text-right">
                     <div className={`font-bold ${themeClasses.textPrimary}`}>
-                      {formatPrice(price.amount, 'USD')}
+                      {formatPrice(price)}
                       {price.interval && (
                         <span className={`text-sm ${themeClasses.textMuted}`}>
                           /{price.interval}
@@ -152,7 +180,7 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }
             {product.prices?.[0] && (
               <div>
                 <span className={`text-3xl font-bold ${themeClasses.textPrimary}`}>
-                  {formatPrice(product.prices[0].amount, 'USD')}
+                  {formatPrice(product.prices[0])}
                 </span>
                 {product.prices[0].interval && (
                   <span className={`${themeClasses.textSecondary} ml-1`}>

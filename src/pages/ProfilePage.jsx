@@ -1976,7 +1976,18 @@ const PricingTab = ({ themeClasses, user, language }) => {
                       </p>
                     </div>
                     <div className="text-emerald-500 font-semibold">
-                      ${(subscription.items?.data?.[0]?.price?.unit_amount / 100).toFixed(2)}
+                      {(() => {
+                        const amount = subscription.items?.data?.[0]?.price?.unit_amount;
+                        const currency = subscription.items?.data?.[0]?.price?.currency?.toUpperCase();
+                        if (!amount) return '---';
+                        
+                        const price = amount / 100;
+                        if (currency === 'ILS') {
+                          return `₪${price.toLocaleString('he-IL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                        } else {
+                          return `$${price.toFixed(2)}`;
+                        }
+                      })()}
                     </div>
                   </div>
                 </div>
