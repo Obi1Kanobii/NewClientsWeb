@@ -135,7 +135,7 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '', 
         {/* Price Options */}
         {isBlocked ? (
           // Blocked due to existing subscription message
-          <div className="mb-6 text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+          <div className="mb-6 text-center p-4 bg-slate-100 dark:bg-slate-800/50 rounded-lg border border-slate-300 dark:border-slate-600">
             <div className={`text-lg font-semibold ${themeClasses.textPrimary} mb-2`}>
               🚫 {language === 'hebrew' ? 'לא זמין' : 'Not Available'}
             </div>
@@ -259,7 +259,7 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '', 
           className={`
             w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 transform hover:scale-105
             ${isBlocked
-              ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+              ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed'
               : hasActiveSubscription
                 ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                 : selectedPriceObj?.popular || hasPopularPrice
