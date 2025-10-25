@@ -35,13 +35,6 @@ function HomePage() {
     }
   };
 
-  // Check if profile is incomplete
-  useEffect(() => {
-    if (user && isAuthenticated) {
-      checkProfileCompletion();
-    }
-  }, [user, isAuthenticated, checkProfileCompletion]);
-
   const checkProfileCompletion = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -72,6 +65,13 @@ function HomePage() {
       console.error('Error checking profile completion:', error);
     }
   }, [user]);
+
+  // Check if profile is incomplete
+  useEffect(() => {
+    if (user && isAuthenticated) {
+      checkProfileCompletion();
+    }
+  }, [user, isAuthenticated, checkProfileCompletion]);
 
   const handleLogout = async () => {
     try {
