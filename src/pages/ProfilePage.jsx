@@ -3,8 +3,11 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
+import { useStripe } from '../context/StripeContext';
 import { supabase } from '../supabase/supabaseClient';
 import { getMealPlan, debugMealPlans, getFoodLogs, createFoodLog, updateFoodLog, deleteFoodLog, getChatMessages, createChatMessage } from '../supabase/secondaryClient';
+import { getAllProducts, getProductsByCategory, getProduct } from '../config/stripe-products';
+import PricingCard from '../components/PricingCard';
 
 const ProfilePage = () => {
   const { user, isAuthenticated } = useAuth();
@@ -297,6 +300,12 @@ const ProfilePage = () => {
       label: t.profile.tabs.messages,
       icon: '💬',
       description: language === 'hebrew' ? 'תקשורת עם הדיאטנית שלך' : 'Communication with your dietitian'
+    },
+    { 
+      id: 'pricing', 
+      label: language === 'hebrew' ? 'תוכניות מנוי' : 'Subscription Plans',
+      icon: '💳',
+      description: language === 'hebrew' ? 'בחר את התוכנית המתאימה לך' : 'Choose your perfect plan'
     }
   ];
 
@@ -452,6 +461,9 @@ const ProfilePage = () => {
           )}
           {activeTab === 'messages' && (
             <MessagesTab themeClasses={themeClasses} t={t} userCode={profileData.userCode} activeTab={activeTab} language={language} />
+          )}
+          {activeTab === 'pricing' && (
+            <PricingTab themeClasses={themeClasses} user={user} language={language} />
           )}
         </div>
       </div>
@@ -1830,6 +1842,234 @@ const DailyLogTab = ({ themeClasses, t, userCode, language }) => {
         })}
         </div>
       </div>
+    </div>
+  );
+};
+
+// Pricing Tab Component
+const PricingTab = ({ themeClasses, user, language }) => {
+  const { getCustomerSubscriptions, error } = useStripe();
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [userSubscriptions, setUserSubscriptions] = useState([]);
+  const [loadingSubscriptions, setLoadingSubscriptions] = useState(false);
+
+  const allProducts = getAllProducts();
+  
+  // Get products by category
+  const premiumProducts = getProductsByCategory('premium');
+  const completeProducts = getProductsByCategory('complete');
+  const nutritionProducts = getProductsByCategory('nutrition');
+  const contentProducts = getProductsByCategory('content');
+  const consultationProducts = getProductsByCategory('consultation');
+
+  // Fetch user's current subscriptions
+  useEffect(() => {
+    if (user?.id) {
+      fetchUserSubscriptions();
+    }
+  }, [user]);
+
+  const fetchUserSubscriptions = async () => {
+    try {
+      setLoadingSubscriptions(true);
+      const subscriptions = await getCustomerSubscriptions(user.id);
+      setUserSubscriptions(subscriptions || []);
+    } catch (error) {
+      console.error('Error fetching subscriptions:', error);
+      setUserSubscriptions([]);
+    } finally {
+      setLoadingSubscriptions(false);
+    }
+  };
+
+  const hasActiveSubscription = (productId) => {
+    return userSubscriptions.some(sub => {
+      if (sub.status !== 'active') return false;
+      
+      // Check if any item in the subscription matches this product
+      return sub.items?.data?.some(item => {
+        const itemProductId = item.price?.product;
+        return itemProductId === productId;
+      });
+    });
+  };
+
+  const getFilteredProducts = () => {
+    switch (activeCategory) {
+      case 'premium':
+        return premiumProducts;
+      case 'complete':
+        return completeProducts;
+      case 'nutrition':
+        return nutritionProducts;
+      case 'content':
+        return contentProducts;
+      case 'consultation':
+        return consultationProducts;
+      default:
+        return allProducts;
+    }
+  };
+
+  const categories = [
+    { id: 'all', label: language === 'hebrew' ? 'הכל' : 'All Plans', count: allProducts.length },
+    { id: 'premium', label: language === 'hebrew' ? 'פרימיום' : 'Premium', count: premiumProducts.length },
+    { id: 'complete', label: language === 'hebrew' ? 'מלא' : 'Complete', count: completeProducts.length },
+    { id: 'nutrition', label: language === 'hebrew' ? 'תזונה' : 'Nutrition', count: nutritionProducts.length },
+    { id: 'content', label: language === 'hebrew' ? 'תוכן' : 'Content', count: contentProducts.length },
+    { id: 'consultation', label: language === 'hebrew' ? 'יעוץ' : 'Consultation', count: consultationProducts.length },
+  ].filter(category => category.count > 0);
+
+  const filteredProducts = getFilteredProducts();
+
+  return (
+    <div className={`${themeClasses.bgPrimary} min-h-screen p-8 animate-fadeIn`}>
+      {/* Header */}
+      <div className="mb-12 animate-slideInUp">
+        <div className="flex items-center mb-8">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-blue-500/25 animate-pulse">
+            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zM14 6a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2V8a2 2 0 012-2h6zM4 14a2 2 0 002 2h8a2 2 0 002-2v-2a2 2 0 00-2-2H6a2 2 0 00-2 2v2z"/>
+            </svg>
+          </div>
+          <div>
+            <h2 className={`${themeClasses.textPrimary} text-3xl font-bold tracking-tight`}>
+              {language === 'hebrew' ? 'בחר את התוכנית המתאימה לך' : 'Choose Your Perfect Plan'}
+            </h2>
+            <p className={`${themeClasses.textSecondary} text-base mt-1`}>
+              {language === 'hebrew' 
+                ? 'השג את היעדים התזונתיים שלך עם המומחים שלנו. תוכניות מותאמות אישית לכל צורך ותקציב.'
+                : 'Achieve your nutrition goals with our expert team. Personalized plans for every need and budget.'
+              }
+            </p>
+          </div>
+        </div>
+
+        {/* Current Subscriptions Alert */}
+        {userSubscriptions.length > 0 && (
+          <div className={`${themeClasses.bgCard} border border-emerald-500/30 rounded-2xl p-6 mb-8 shadow-lg animate-slideInUp`}>
+            <div className="flex items-center mb-4">
+              <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center mr-3">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                </svg>
+              </div>
+              <h3 className={`${themeClasses.textPrimary} text-lg font-semibold`}>
+                {language === 'hebrew' ? 'המנויים הפעילים שלך' : 'Your Active Subscriptions'}
+              </h3>
+            </div>
+            <div className="grid gap-3">
+              {userSubscriptions.filter(sub => sub.status === 'active').map((subscription, index) => (
+                <div key={subscription.id} className={`${themeClasses.bgSecondary} rounded-lg p-4`}>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className={`${themeClasses.textPrimary} font-medium`}>
+                        {(() => {
+                          const productId = subscription.items?.data?.[0]?.price?.product;
+                          const product = getProduct(productId);
+                          return product?.name || productId || 'Subscription';
+                        })()}
+                      </p>
+                      <p className={`${themeClasses.textSecondary} text-sm`}>
+                        {language === 'hebrew' ? 'פעיל' : 'Active'} • 
+                        {language === 'hebrew' ? ' מחדש ב-' : ' Renews '}{new Date(subscription.current_period_end * 1000).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="text-emerald-500 font-semibold">
+                      ${(subscription.items?.data?.[0]?.price?.unit_amount / 100).toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Category Filter */}
+      {categories.length > 1 && (
+        <div className="mb-8 animate-slideInUp" style={{ animationDelay: '0.2s' }}>
+          <div className="flex flex-wrap gap-3">
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => setActiveCategory(category.id)}
+                className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                  activeCategory === category.id
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg shadow-blue-500/25'
+                    : `${themeClasses.bgCard} ${themeClasses.textSecondary} hover:${themeClasses.bgSecondary} border ${themeClasses.borderPrimary}`
+                }`}
+              >
+                {category.label}
+                <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                  activeCategory === category.id 
+                    ? 'bg-white/20' 
+                    : `${themeClasses.bgSecondary}`
+                }`}>
+                  {category.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Products Grid */}
+      <div className="animate-slideInUp" style={{ animationDelay: '0.4s' }}>
+        {filteredProducts.length === 0 ? (
+          <div className="text-center py-12">
+            <div className={`w-20 h-20 ${themeClasses.bgCard} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
+              <svg className={`w-10 h-10 ${themeClasses.textMuted}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+              </svg>
+            </div>
+            <p className={`${themeClasses.textSecondary} text-lg`}>
+              {language === 'hebrew' ? 'אין תוכניות זמינות בקטגוריה זו' : 'No plans available in this category'}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredProducts.map((product, index) => (
+              <div
+                key={product.id}
+                className="animate-slideInUp"
+                style={{ animationDelay: `${0.5 + index * 0.1}s` }}
+              >
+                <PricingCard
+                  product={product}
+                  className={`transform hover:scale-105 transition-all duration-300 ${
+                    hasActiveSubscription(product.id) ? 'ring-2 ring-emerald-500' : ''
+                  }`}
+                />
+                {hasActiveSubscription(product.id) && (
+                  <div className="mt-3 text-center">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                      </svg>
+                      {language === 'hebrew' ? 'פעיל' : 'Active'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Loading State */}
+      {loadingSubscriptions && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className={`${themeClasses.bgCard} rounded-lg p-6`}>
+            <div className="flex items-center">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mr-3"></div>
+              <span className={themeClasses.textPrimary}>
+                {language === 'hebrew' ? 'טוען מנויים...' : 'Loading subscriptions...'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

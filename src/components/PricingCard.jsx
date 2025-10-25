@@ -74,17 +74,17 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }
   const selectedPriceObj = product.prices?.find(price => price.id === selectedPrice);
 
   return (
-    <div className={`relative bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ${className}`}>
+    <div className={`relative ${themeClasses.bgCard} rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border ${themeClasses.borderPrimary} ${className}`}>
       {hasPopularPrice && selectedPriceObj?.popular && getPopularBadge()}
       {selectedPriceObj?.discount && getDiscountBadge(selectedPriceObj.discount)}
 
       <div className="p-6">
         {/* Header */}
         <div className="text-center mb-6">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+          <h3 className={`text-xl font-bold ${themeClasses.textPrimary} mb-2`}>
             {product.name}
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">
+          <p className={`${themeClasses.textSecondary} text-sm`}>
             {product.description}
           </p>
         </div>
@@ -92,7 +92,7 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }
         {/* Price Options */}
         {product.prices && product.prices.length > 1 ? (
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            <label className={`block text-sm font-medium ${themeClasses.textSecondary} mb-3`}>
               {language === 'hebrew' ? 'בחר תוכנית:' : 'Choose Plan:'}
             </label>
             <div className="space-y-2">
@@ -102,8 +102,8 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }
                   className={`
                     flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors
                     ${selectedPrice === price.id 
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                      ? `border-blue-500 ${themeClasses.bgSecondary} ring-2 ring-blue-200 dark:ring-blue-800` 
+                      : `${themeClasses.borderPrimary} hover:${themeClasses.bgSecondary}`
                     }
                   `}
                 >
@@ -117,27 +117,27 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }
                       className="mr-3 text-blue-600"
                     />
                     <div>
-                      <div className="font-medium text-gray-900 dark:text-white">
+                      <div className={`font-medium ${themeClasses.textPrimary}`}>
                         {price.name}
                       </div>
                       {price.commitment && (
-                        <div className="text-xs text-gray-500">
+                        <div className={`text-xs ${themeClasses.textMuted}`}>
                           {price.commitment} month commitment
                         </div>
                       )}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold text-gray-900 dark:text-white">
+                    <div className={`font-bold ${themeClasses.textPrimary}`}>
                       {formatPrice(price.amount, 'USD')}
                       {price.interval && (
-                        <span className="text-sm text-gray-500">
+                        <span className={`text-sm ${themeClasses.textMuted}`}>
                           /{price.interval}
                         </span>
                       )}
                     </div>
                     {price.discount && (
-                      <div className="text-xs text-green-600 font-medium">
+                      <div className="text-xs text-green-600 dark:text-green-400 font-medium">
                         {price.discount}
                       </div>
                     )}
@@ -151,13 +151,18 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }
           <div className="text-center mb-6">
             {product.prices?.[0] && (
               <div>
-                <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                <span className={`text-3xl font-bold ${themeClasses.textPrimary}`}>
                   {formatPrice(product.prices[0].amount, 'USD')}
                 </span>
                 {product.prices[0].interval && (
-                  <span className="text-gray-600 dark:text-gray-400 ml-1">
+                  <span className={`${themeClasses.textSecondary} ml-1`}>
                     /{product.prices[0].interval}
                   </span>
+                )}
+                {product.prices[0].commitment && (
+                  <div className={`text-sm ${themeClasses.textMuted} mt-2`}>
+                    {product.prices[0].commitment} month commitment
+                  </div>
                 )}
               </div>
             )}
@@ -168,8 +173,8 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }
         {product.features && (
           <ul className="space-y-3 mb-6 text-sm">
             {product.features.map((feature, index) => (
-              <li key={index} className="flex items-center text-gray-600 dark:text-gray-400">
-                <svg className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <li key={index} className={`flex items-center ${themeClasses.textSecondary}`}>
+                <svg className="w-4 h-4 text-green-500 dark:text-green-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
                 {feature}

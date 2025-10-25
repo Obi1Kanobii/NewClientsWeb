@@ -55,6 +55,8 @@ export const PRODUCT_CONFIG = {
         interval: 'month',
         interval_count: 1,
         commitment: 3,
+        amount: 68000, // $680/month in cents
+        currency: 'USD',
         popular: false
       },
       {
@@ -63,6 +65,8 @@ export const PRODUCT_CONFIG = {
         interval: 'month',
         interval_count: 1,
         commitment: 6,
+        amount: 60000, // $600/month in cents
+        currency: 'USD',
         discount: '15% off',
         popular: true
       }
@@ -87,6 +91,8 @@ export const PRODUCT_CONFIG = {
         interval: 'month',
         interval_count: 1,
         frequency: 'monthly',
+        amount: 75000, // $750/month in cents
+        currency: 'USD',
         popular: false
       },
       {
@@ -95,6 +101,8 @@ export const PRODUCT_CONFIG = {
         interval: 'month', 
         interval_count: 1,
         frequency: 'monthly',
+        amount: 83000, // $830/month in cents
+        currency: 'USD',
         popular: true
       },
       {
@@ -103,6 +111,8 @@ export const PRODUCT_CONFIG = {
         interval: 'month',
         interval_count: 1,
         frequency: 'biweekly',
+        amount: 50000, // $500/month in cents
+        currency: 'USD',
         popular: false
       }
     ]
@@ -126,6 +136,8 @@ export const PRODUCT_CONFIG = {
         interval: 'month',
         interval_count: 1,
         frequency: 'monthly',
+        amount: 50000, // $500/month in cents
+        currency: 'USD',
         popular: false
       },
       {
@@ -134,6 +146,8 @@ export const PRODUCT_CONFIG = {
         interval: 'month',
         interval_count: 1,
         frequency: 'monthly',
+        amount: 58000, // $580/month in cents
+        currency: 'USD',
         popular: true
       },
       {
@@ -142,6 +156,8 @@ export const PRODUCT_CONFIG = {
         interval: 'month',
         interval_count: 1, 
         frequency: 'biweekly',
+        amount: 73000, // $730/month in cents
+        currency: 'USD',
         popular: false
       }
     ]
@@ -164,7 +180,8 @@ export const PRODUCT_CONFIG = {
         name: 'Monthly Access',
         interval: 'month',
         interval_count: 1,
-        amount: 300, // $3.00
+        amount: 30000, // $300/month in cents
+        currency: 'USD',
         popular: true
       }
     ]
@@ -187,6 +204,7 @@ export const PRODUCT_CONFIG = {
         name: 'Single Session',
         interval: null, // One-time payment
         amount: 65000, // $650.00 in cents
+        currency: 'USD',
         popular: true
       }
     ]
