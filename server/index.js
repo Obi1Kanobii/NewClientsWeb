@@ -91,6 +91,21 @@ app.post('/api/stripe/sync-to-database', async (req, res) => {
         else if (productId === 'prod_SbI1AIv2A46oJ9') subscriptionType = 'nutrition_training';
         else if (productId === 'prod_SbI0A23T20wul3') subscriptionType = 'nutrition_only';
         
+        // Determine commitment period based on price ID (3 months vs 6 months)
+        let commitmentMonths = 3; // Default 3 months
+        const currentDate = new Date(subscription.current_period_start * 1000);
+        
+        // Check if this is a 6-month commitment price (Option 2 prices are typically 6-month)
+        if (priceId === 'price_1Rg5R8HIeYfvCylDxX2PsOrR' || // BetterPro Option 2
+            priceId === 'price_1Rg5R4HIeYfvCylDAshP6FOk' || // Nutrition+Training Option 2
+            priceId === 'price_1Rg5QtHIeYfvCylDwr9v599a') {  // Nutrition Only Option 2
+          commitmentMonths = 6;
+        }
+        
+        // Calculate commitment end date
+        const commitmentEndDate = new Date(currentDate);
+        commitmentEndDate.setMonth(commitmentEndDate.getMonth() + commitmentMonths);
+        
         const subscriptionData = {
           user_id: customerId,
           stripe_customer_id: subscription.customer,
@@ -104,6 +119,9 @@ app.post('/api/stripe/sync-to-database', async (req, res) => {
           cancel_at_period_end: subscription.cancel_at_period_end || false,
           amount_total: amount,
           currency: currency,
+          commitment_months: commitmentMonths,
+          commitment_end_date: commitmentEndDate.toISOString(),
+          can_cancel: new Date() >= commitmentEndDate, // Can only cancel after commitment period
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
@@ -650,6 +668,21 @@ async function handleSubscriptionCreated(subscription) {
     else if (productId === 'prod_SbI1AIv2A46oJ9') subscriptionType = 'nutrition_training';
     else if (productId === 'prod_SbI0A23T20wul3') subscriptionType = 'nutrition_only';
     
+    // Determine commitment period based on price ID (3 months vs 6 months)
+    let commitmentMonths = 3; // Default 3 months
+    const currentDate = new Date(subscription.current_period_start * 1000);
+    
+    // Check if this is a 6-month commitment price (Option 2 prices are typically 6-month)
+    if (priceId === 'price_1Rg5R8HIeYfvCylDxX2PsOrR' || // BetterPro Option 2
+        priceId === 'price_1Rg5R4HIeYfvCylDAshP6FOk' || // Nutrition+Training Option 2
+        priceId === 'price_1Rg5QtHIeYfvCylDwr9v599a') {  // Nutrition Only Option 2
+      commitmentMonths = 6;
+    }
+    
+    // Calculate commitment end date
+    const commitmentEndDate = new Date(currentDate);
+    commitmentEndDate.setMonth(commitmentEndDate.getMonth() + commitmentMonths);
+    
     const subscriptionData = {
       user_id: userId,
       stripe_customer_id: subscription.customer,
@@ -663,6 +696,9 @@ async function handleSubscriptionCreated(subscription) {
       cancel_at_period_end: subscription.cancel_at_period_end || false,
       amount_total: amount,
       currency: currency,
+      commitment_months: commitmentMonths,
+      commitment_end_date: commitmentEndDate.toISOString(),
+      can_cancel: new Date() >= commitmentEndDate, // Can only cancel after commitment period
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -696,12 +732,33 @@ async function handleSubscriptionUpdated(subscription) {
     
     console.log('Updating subscription for user:', userId);
     
+    // Get product and price info for commitment tracking
+    const priceId = subscription.items.data[0]?.price?.id;
+    
+    // Determine commitment period based on price ID (3 months vs 6 months)
+    let commitmentMonths = 3; // Default 3 months
+    const currentDate = new Date(subscription.current_period_start * 1000);
+    
+    // Check if this is a 6-month commitment price (Option 2 prices are typically 6-month)
+    if (priceId === 'price_1Rg5R8HIeYfvCylDxX2PsOrR' || // BetterPro Option 2
+        priceId === 'price_1Rg5R4HIeYfvCylDAshP6FOk' || // Nutrition+Training Option 2
+        priceId === 'price_1Rg5QtHIeYfvCylDwr9v599a') {  // Nutrition Only Option 2
+      commitmentMonths = 6;
+    }
+    
+    // Calculate commitment end date
+    const commitmentEndDate = new Date(currentDate);
+    commitmentEndDate.setMonth(commitmentEndDate.getMonth() + commitmentMonths);
+    
     // Update subscription record
     const updateData = {
       status: subscription.status,
       current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
       current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
       cancel_at_period_end: subscription.cancel_at_period_end || false,
+      commitment_months: commitmentMonths,
+      commitment_end_date: commitmentEndDate.toISOString(),
+      can_cancel: new Date() >= commitmentEndDate, // Can only cancel after commitment period
       updated_at: new Date().toISOString()
     };
     
