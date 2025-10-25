@@ -11,6 +11,29 @@ function HomePage() {
   const { user, isAuthenticated, userDisplayName, loading } = useAuth();
   const { isDarkMode, toggleTheme, themeClasses } = useTheme();
   const [isProfileIncomplete, setIsProfileIncomplete] = useState(false);
+  const [commitmentPeriod, setCommitmentPeriod] = useState(3);
+  const [showUSD, setShowUSD] = useState(false);
+
+  // Format price based on currency
+  const formatPrice = (priceILS, priceUSD) => {
+    if (showUSD) {
+      return `$${Math.round(priceUSD / 100)}`;
+    } else {
+      return `₪${Math.round(priceILS / 100)}`;
+    }
+  };
+
+  // Handle plan selection - redirect to login if not authenticated
+  const handlePlanSelect = (planType) => {
+    if (!isAuthenticated) {
+      // Redirect to login page
+      window.location.href = '/login';
+    } else {
+      // Handle plan selection for authenticated users
+      // You can add plan selection logic here
+      console.log(`Selected plan: ${planType}`);
+    }
+  };
 
   // Check if profile is incomplete
   useEffect(() => {
@@ -89,12 +112,12 @@ function HomePage() {
               >
                 {language === 'hebrew' ? 'דע את המספרים שלך' : 'Know Your Numbers'}
               </a>
-              <a 
-                href="#knowledge-inspiration" 
+              <Link 
+                to="/knowledge" 
                 className={`px-3 py-1 rounded-lg ${isDarkMode ? themeClasses.textPrimary : 'text-gray-800'} hover:text-emerald-500 hover:${isDarkMode ? themeClasses.bgPrimary : 'bg-emerald-50'} transition-all duration-300 font-medium text-sm whitespace-nowrap`}
               >
                 {language === 'hebrew' ? 'ידע והשראה' : 'Knowledge & Inspiration'}
-              </a>
+              </Link>
               <Link 
                 to="/recipes" 
                 className={`px-3 py-1 rounded-lg ${isDarkMode ? themeClasses.textPrimary : 'text-gray-800'} hover:text-emerald-500 hover:${isDarkMode ? themeClasses.bgPrimary : 'bg-emerald-50'} transition-all duration-300 font-medium text-sm`}
@@ -133,7 +156,7 @@ function HomePage() {
                 onClick={toggleLanguage}
                 className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl flex items-center justify-center transition-all duration-300 text-white font-semibold text-sm"
               >
-                {language === 'hebrew' ? 'EN' : 'עב'}
+                {language === 'hebrew' ? 'EN' : 'ע'}
               </button>
               
               {/* Separator */}
@@ -646,8 +669,19 @@ function HomePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className={`${themeClasses.bgCard} rounded-xl ${themeClasses.shadowCard} p-6`}>
                   <div className="flex items-center mb-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center mr-4">
-                      <span className="text-white font-bold text-xl">G</span>
+                    <div className="w-16 h-16 mr-4 relative">
+                      <img 
+                        src="/gal.jpg" 
+                        alt="Gal Becker" 
+                        className="w-full h-full rounded-full object-cover shadow-lg border-4 border-blue-400/20"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                      <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center absolute inset-0" style={{display: 'none'}}>
+                        <span className="text-white font-bold text-xl">G</span>
+                      </div>
                     </div>
                     <div>
                       <h5 className={`text-xl font-bold ${themeClasses.textPrimary}`}>{t.scienceSection.team.members.gal.name}</h5>
@@ -663,8 +697,19 @@ function HomePage() {
                 
                 <div className={`${themeClasses.bgCard} rounded-xl ${themeClasses.shadowCard} p-6`}>
                   <div className="flex items-center mb-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center mr-4">
-                      <span className="text-white font-bold text-xl">Y</span>
+                    <div className="w-16 h-16 mr-4 relative">
+                      <img 
+                        src="/yarden.png" 
+                        alt="Yarden Ovadia" 
+                        className="w-full h-full rounded-full object-cover shadow-lg border-4 border-blue-400/20"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                      <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center absolute inset-0" style={{display: 'none'}}>
+                        <span className="text-white font-bold text-xl">Y</span>
+                      </div>
                     </div>
                     <div>
                       <h5 className={`text-xl font-bold ${themeClasses.textPrimary}`}>{t.scienceSection.team.members.yarden.name}</h5>
@@ -847,70 +892,254 @@ function HomePage() {
         </section>
 
         {/* Pricing Section */}
-        <section className={`py-20 ${themeClasses.bgSecondary}`}>
+        <section className={`py-20 ${themeClasses.bgSecondary}`} id="know-your-numbers">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <h3 className={`text-4xl font-bold ${themeClasses.textPrimary} mb-4`}>{t.pricing.title}</h3>
-              <p className={`text-xl ${themeClasses.textSecondary}`}>{t.pricing.subtitle}</p>
+              <h3 className={`text-4xl font-bold ${themeClasses.textPrimary} mb-4`}>
+                {language === 'hebrew' ? 'תוכניות המנוי שלנו' : 'Our Subscription Plans'}
+              </h3>
+              <p className={`text-xl ${themeClasses.textSecondary} mb-8`}>
+                {language === 'hebrew' ? 'בחר את התוכנית המתאימה לך' : 'Choose the plan that fits you best'}
+              </p>
+              
+              {/* Toggle Controls */}
+              <div className={`flex flex-col sm:flex-row items-center justify-center gap-6 mb-12`}>
+                {/* Commitment Toggle */}
+                <div className={`${themeClasses.bgCard} rounded-2xl p-2 border-2 ${themeClasses.borderPrimary}`}>
+                  <div className="flex">
+                    <button 
+                      onClick={() => setCommitmentPeriod && setCommitmentPeriod(3)}
+                      className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                        (commitmentPeriod || 3) === 3 
+                          ? 'bg-emerald-500 text-white shadow-lg' 
+                          : `${themeClasses.textSecondary} hover:${themeClasses.textPrimary}`
+                      }`}
+                    >
+                      {language === 'hebrew' ? '3 חודשים' : '3 Months'}
+                    </button>
+                    <button 
+                      onClick={() => setCommitmentPeriod && setCommitmentPeriod(6)}
+                      className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 relative ${
+                        (commitmentPeriod || 3) === 6 
+                          ? 'bg-emerald-500 text-white shadow-lg' 
+                          : `${themeClasses.textSecondary} hover:${themeClasses.textPrimary}`
+                      }`}
+                    >
+                      {language === 'hebrew' ? '6 חודשים' : '6 Months'}
+                      <span className="absolute -top-2 -right-2 bg-orange-400 text-white text-xs px-2 py-1 rounded-full">
+                        {language === 'hebrew' ? 'חסכון' : 'Save'}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Currency Toggle */}
+                <div className={`${themeClasses.bgCard} rounded-2xl p-2 border-2 ${themeClasses.borderPrimary}`}>
+                  <div className="flex">
+                    <button 
+                      onClick={() => setShowUSD(false)}
+                      className={`px-4 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                        !showUSD 
+                          ? 'bg-blue-500 text-white shadow-lg' 
+                          : `${themeClasses.textSecondary} hover:${themeClasses.textPrimary}`
+                      }`}
+                    >
+                      ₪ ILS
+                    </button>
+                    <button 
+                      onClick={() => setShowUSD(true)}
+                      className={`px-4 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                        showUSD 
+                          ? 'bg-blue-500 text-white shadow-lg' 
+                          : `${themeClasses.textSecondary} hover:${themeClasses.textPrimary}`
+                      }`}
+                    >
+                      $ USD
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* Basic Plan - Nutrition Only */}
               <div className={`${themeClasses.bgCard} border-2 ${themeClasses.borderPrimary} rounded-xl p-8 hover:border-emerald-500 transition-colors duration-300`}>
                 <div className="text-center">
-                  <h4 className={`text-2xl font-bold ${themeClasses.textPrimary} mb-4`}>{t.pricing.basic.title}</h4>
-                  <div className={`text-4xl font-bold ${themeClasses.textPrimary} mb-6`}>{t.pricing.basic.price}<span className={`text-lg ${themeClasses.textSecondary}`}>{t.pricing.basic.period}</span></div>
-                  <ul className="space-y-3 mb-8">
-                    {t.pricing.basic.features.map((feature, index) => (
-                      <li key={index} className="flex items-center">
-                        <span className="text-green-500 mr-3">✓</span>
-                        <span className={themeClasses.textSecondary}>{feature}</span>
-                      </li>
-                    ))}
+                  <h4 className={`text-2xl font-bold ${themeClasses.textPrimary} mb-4`}>
+                    {language === 'hebrew' ? 'בסיסי' : 'Basic'}
+                  </h4>
+                  <div className={`text-4xl font-bold ${themeClasses.textPrimary} mb-6`}>
+                    {formatPrice(58000, 16600)}
+                    <span className={`text-lg ${themeClasses.textSecondary}`}>
+                      {language === 'hebrew' ? '/חודש' : '/month'}
+                    </span>
+                  </div>
+                  <ul className="space-y-3 mb-8 text-right" dir={language === 'hebrew' ? 'rtl' : 'ltr'}>
+                    <li className="flex items-center">
+                      <span className="text-green-500 mr-3">✓</span>
+                      <span className={themeClasses.textSecondary}>
+                        {language === 'hebrew' ? 'תוכניות ארוחות מותאמות' : 'Custom meal plans'}
+                      </span>
+                    </li>
+                    <li className="flex items-center">
+                      <span className="text-green-500 mr-3">✓</span>
+                      <span className={themeClasses.textSecondary}>
+                        {language === 'hebrew' ? 'ניתוח תזונתי' : 'Nutritional analysis'}
+                      </span>
+                    </li>
+                    <li className="flex items-center">
+                      <span className="text-green-500 mr-3">✓</span>
+                      <span className={themeClasses.textSecondary}>
+                        {language === 'hebrew' ? 'מעקב התקדמות' : 'Progress tracking'}
+                      </span>
+                    </li>
+                    <li className="flex items-center">
+                      <span className="text-green-500 mr-3">✓</span>
+                      <span className={themeClasses.textSecondary}>
+                        {language === 'hebrew' ? 'תמיכה במייל' : 'Email support'}
+                      </span>
+                    </li>
                   </ul>
-                  <button className={`w-full ${themeClasses.btnSecondary} py-3 rounded-lg font-semibold transition-colors duration-300`}>
-                    {t.buttons.selectPlan}
+                  <button 
+                    onClick={() => handlePlanSelect('basic')}
+                    className={`w-full ${themeClasses.btnSecondary} py-3 rounded-lg font-semibold transition-colors duration-300`}
+                  >
+                    {language === 'hebrew' ? 'בחר תוכנית' : 'Select Plan'}
                   </button>
                 </div>
               </div>
               
+              {/* Professional Plan - Nutrition + Training */}
               <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-8 text-white relative">
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-yellow-400 text-gray-900 px-4 py-1 rounded-full text-sm font-bold">{t.pricing.professional.popular}</span>
+                  <span className="bg-yellow-400 text-gray-900 px-4 py-1 rounded-full text-sm font-bold">
+                    {language === 'hebrew' ? 'הכי פופולרי' : 'Most Popular'}
+                  </span>
                 </div>
                 <div className="text-center">
-                  <h4 className="text-2xl font-bold mb-4">{t.pricing.professional.title}</h4>
-                  <div className="text-4xl font-bold mb-6">{t.pricing.professional.price}<span className="text-lg opacity-80">{t.pricing.professional.period}</span></div>
-                  <ul className="space-y-3 mb-8">
-                    {t.pricing.professional.features.map((feature, index) => (
-                      <li key={index} className="flex items-center">
-                        <span className="text-green-300 mr-3">✓</span>
-                        {feature}
-                      </li>
-                    ))}
+                  <h4 className="text-2xl font-bold mb-4">
+                    {language === 'hebrew' ? 'מקצועי' : 'Professional'}
+                  </h4>
+                  <div className="text-4xl font-bold mb-6">
+                    {formatPrice(83000, 23700)}
+                    <span className="text-lg opacity-80">
+                      {language === 'hebrew' ? '/חודש' : '/month'}
+                    </span>
+                  </div>
+                  <ul className="space-y-3 mb-8 text-right" dir={language === 'hebrew' ? 'rtl' : 'ltr'}>
+                    <li className="flex items-center">
+                      <span className="text-green-300 mr-3">✓</span>
+                      <span>{language === 'hebrew' ? 'כל מה שיש בבסיסי +' : 'Everything in Basic +'}</span>
+                    </li>
+                    <li className="flex items-center">
+                      <span className="text-green-300 mr-3">✓</span>
+                      <span>{language === 'hebrew' ? 'תוכניות אימון מותאמות' : 'Custom workout plans'}</span>
+                    </li>
+                    <li className="flex items-center">
+                      <span className="text-green-300 mr-3">✓</span>
+                      <span>{language === 'hebrew' ? 'תמיכת מאמן אישי' : 'Personal trainer support'}</span>
+                    </li>
+                    <li className="flex items-center">
+                      <span className="text-green-300 mr-3">✓</span>
+                      <span>{language === 'hebrew' ? 'מפגשים חודשיים' : 'Monthly sessions'}</span>
+                    </li>
+                    <li className="flex items-center">
+                      <span className="text-green-300 mr-3">✓</span>
+                      <span>{language === 'hebrew' ? 'תמיכה בצ׳אט' : 'Chat support'}</span>
+                    </li>
                   </ul>
-                  <button className="w-full bg-white text-emerald-600 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors duration-300">
-                    {t.buttons.selectPlan}
+                  <button 
+                    onClick={() => handlePlanSelect('professional')}
+                    className="w-full bg-white text-emerald-600 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors duration-300"
+                  >
+                    {language === 'hebrew' ? 'בחר תוכנית' : 'Select Plan'}
                   </button>
                 </div>
               </div>
               
-              <div className={`${themeClasses.bgCard} border-2 ${themeClasses.borderPrimary} rounded-xl p-8 hover:border-emerald-500 transition-colors duration-300`}>
+              {/* Premium Plan - BetterPro with commitment pricing */}
+              <div className={`${themeClasses.bgCard} border-2 border-purple-500 rounded-xl p-8 hover:border-purple-400 transition-colors duration-300 relative overflow-hidden`}>
+                <div className="absolute top-0 right-0 bg-purple-500 text-white px-3 py-1 text-xs font-bold">
+                  {language === 'hebrew' ? 'פרימיום' : 'Premium'}
+                </div>
                 <div className="text-center">
-                  <h4 className={`text-2xl font-bold ${themeClasses.textPrimary} mb-4`}>{t.pricing.premium.title}</h4>
-                  <div className={`text-4xl font-bold ${themeClasses.textPrimary} mb-6`}>{t.pricing.premium.price}<span className={`text-lg ${themeClasses.textSecondary}`}>{t.pricing.premium.period}</span></div>
-                  <ul className="space-y-3 mb-8">
-                    {t.pricing.premium.features.map((feature, index) => (
-                      <li key={index} className="flex items-center">
-                        <span className="text-green-500 mr-3">✓</span>
-                        <span className={themeClasses.textSecondary}>{feature}</span>
-                      </li>
-                    ))}
+                  <h4 className={`text-2xl font-bold ${themeClasses.textPrimary} mb-4`}>
+                    {language === 'hebrew' ? 'BetterPro' : 'BetterPro'}
+                  </h4>
+                  <div className={`mb-6`}>
+                    <div className={`text-4xl font-bold ${themeClasses.textPrimary}`}>
+                      {(commitmentPeriod || 3) === 3 
+                        ? formatPrice(68000, 19400) 
+                        : formatPrice(60000, 17100)
+                      }
+                    </div>
+                    <span className={`text-lg ${themeClasses.textSecondary}`}>
+                      {language === 'hebrew' ? '/חודש' : '/month'}
+                    </span>
+                    {(commitmentPeriod || 3) === 6 && (
+                      <div className="text-sm text-green-500 font-semibold mt-1">
+                        {language === 'hebrew' 
+                          ? (showUSD ? 'חסכון של $23 לחודש' : 'חסכון של ₪80 לחודש')
+                          : (showUSD ? 'Save $23/month' : 'Save ₪80/month')
+                        }
+                      </div>
+                    )}
+                  </div>
+                  <ul className="space-y-3 mb-8 text-right" dir={language === 'hebrew' ? 'rtl' : 'ltr'}>
+                    <li className="flex items-center">
+                      <span className="text-purple-500 mr-3">✓</span>
+                      <span className={themeClasses.textSecondary}>
+                        {language === 'hebrew' ? 'כל מה שיש במקצועי +' : 'Everything in Professional +'}
+                      </span>
+                    </li>
+                    <li className="flex items-center">
+                      <span className="text-purple-500 mr-3">✓</span>
+                      <span className={themeClasses.textSecondary}>
+                        {language === 'hebrew' ? 'תכנון ארוחות מתקדם' : 'Advanced meal planning'}
+                      </span>
+                    </li>
+                    <li className="flex items-center">
+                      <span className="text-purple-500 mr-3">✓</span>
+                      <span className={themeClasses.textSecondary}>
+                        {language === 'hebrew' ? 'תמיכה בעדיפות' : 'Priority support'}
+                      </span>
+                    </li>
+                    <li className="flex items-center">
+                      <span className="text-purple-500 mr-3">✓</span>
+                      <span className={themeClasses.textSecondary}>
+                        {language === 'hebrew' ? 'מפגשים שבועיים' : 'Weekly sessions'}
+                      </span>
+                    </li>
+                    <li className="flex items-center">
+                      <span className="text-purple-500 mr-3">✓</span>
+                      <span className={themeClasses.textSecondary}>
+                        {language === 'hebrew' ? 'גישה לכל התכונות' : 'Access to all features'}
+                      </span>
+                    </li>
                   </ul>
-                  <button className={`w-full ${themeClasses.btnSecondary} py-3 rounded-lg font-semibold transition-colors duration-300`}>
-                    {t.buttons.selectPlan}
+                  <div className={`text-xs ${themeClasses.textMuted} mb-4`}>
+                    {language === 'hebrew' 
+                      ? `התחייבות ל-${(commitmentPeriod || 3)} חודשים` 
+                      : `${(commitmentPeriod || 3)}-month commitment`
+                    }
+                  </div>
+                  <button 
+                    onClick={() => handlePlanSelect('betterpro')}
+                    className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-purple-600 hover:to-purple-700 transition-all duration-300 shadow-lg"
+                  >
+                    {language === 'hebrew' ? 'בחר תוכנית' : 'Select Plan'}
                   </button>
                 </div>
               </div>
+            </div>
+            
+            <div className="text-center mt-12">
+              <p className={`${themeClasses.textMuted} text-sm`}>
+                {language === 'hebrew' 
+                  ? 'כל התוכניות כוללות אפשרות ביטול בכל עת' 
+                  : 'All plans include cancellation option at any time'
+                }
+              </p>
             </div>
           </div>
         </section>

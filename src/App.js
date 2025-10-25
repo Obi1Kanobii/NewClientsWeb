@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ProfilePage from './pages/ProfilePage';
 import AboutPage from './pages/AboutPage';
+import KnowledgePage from './pages/KnowledgePage';
 import RecipesPage from './pages/RecipesPage';
 import PricingPage from './pages/PricingPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
@@ -29,6 +30,7 @@ function App() {
                   <Route path="/signup" element={<SignupPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/about" element={<AboutPage />} />
+                  <Route path="/knowledge" element={<KnowledgePage />} />
                   <Route path="/recipes" element={<RecipesPage />} />
                   <Route path="/pricing" element={<PricingPage />} />
                   <Route path="/payment-success" element={<PaymentSuccessPage />} />

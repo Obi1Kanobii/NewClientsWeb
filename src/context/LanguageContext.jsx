@@ -5,7 +5,7 @@ const LanguageContext = createContext();
 // Translation object containing all text in both languages
 const translations = {
   hebrew: {
-    tagline: "בריאות ואורח חיים בריא",
+    tagline: "בריאות ואיכות חיים",
     nav: {
       home: "בית",
       services: "שירותים",
@@ -31,13 +31,14 @@ const translations = {
     },
     hero: {
       welcome: "המסע שלך",
-      subtitle: "לחיים בריאים ויפים יותר",
+      subtitle: "לחיים בריאים וטובים יותר",
       description: "התחל עכשיו",
-      mainDescription: "התחל במסע טרנספורמטיבי לבריאות עם תובנות מבוססות בינה מלאכותית והדרכה מקצועית המותאמת לך",
+      mainDescription: "התחל במסע של שינוי אמיתי לבריאות עם תובנות מבוססות בינה מלאכותית והדרכה מקצועית הבנויה במיוחד עבורך",
+      fullDescription: "בואו נתחיל יחד במסע מרתק של שינוי אמיתי לבריאות מיטבית, עם כלים חכמים והדרכה אישית שמותאמת בדיוק לכם",
       features: [
-        "גישה 24/7 למומחים ולבינה מלאכותית שפותחה על ידי דיאטנים קליניים ופרופסורים לכושר",
-        "מגובה על ידי דיאטנים ומאמני כושר מנוסים עם אלפי לקוחות מרוצים, ומבוסס על מחקר מדעי מאומת ועדכני",
-        "מכוון לשיפור ביצועים פיזיים ובריאות לטווח הארוך עבור ספורטאים, מאמנים מקצועיים ואנשים בעלי ביצועים גבוהים"
+        "גישה מלאה 24/7 למומחים ולבינה מלאכותית שפותחה על ידי דיאטנים קליניים ומומחי כושר מובילים",
+        "נתמך על ידי דיאטנים ומאמני כושר מנוסים עם אלפי לקוחות מרוצים, מבוסס על מחקר מדעי מאומת ועדכני",
+        "מיועד לשיפור ביצועים פיזיים ובריאות לטווח ארוך עבור ספורטאים, מאמנים מקצועיים ואנשים בעלי שאיפות גבוהות"
       ],
       buttons: {
         joinToday: "הצטרף אלינו היום",
@@ -56,7 +57,7 @@ const translations = {
         unbalancedNutrition: {
           percentage: "87%",
           title: "תזונה לא מאוזנת",
-          description: "אוכלים מה שזמין במקום מה שטוב לנו, בלי תכנון או הבנה של צרכים תזונתיים"
+          description: "אוכלים מה שזמין במקום מה שטוב לנו, ללא תכנון או הבנה של הצרכים התזונתיים שלנו"
         },
         lackOfMotivation: {
           percentage: "92%",
@@ -76,7 +77,7 @@ const translations = {
       },
       frustration: {
         title: "אנחנו מבינים את התסכול שלך",
-        description: "כל אחד מאיתנו עבר את אותו מסע - ניסיונות כושלים, אכזבות והרגשה שאולי זה פשוט לא בשבילנו.",
+        description: "כל אחד מאיתנו עבר את אותו מסע - ניסיונות כושלים, אכזבות והרגשה שאולי זה פשוט לא מיועד לנו.",
         callToAction: "אבל אנחנו כאן כדי לשנות את זה.",
         legend: {
           frustration: "תסכול",
@@ -207,7 +208,7 @@ const translations = {
     scienceSection: {
       title: "מדע ומומחיות",
       subtitle: "בשירות הבריאות שלך",
-      description: "השיטה שלנו מבוססת על מחקר מדעי מוכח ושנות ניסיון בתזונה וכושר. אנו משלבים טכנולוגיה מתקדמת עם מומחיות אנושית",
+      description: "השיטה שלנו מתבססת על מחקר מדעי מוכח ושנות ניסיון בתזונה ובכושר. אנו משלבים טכנולוגיה מתקדמת עם מומחיות אנושית",
       metrics: {
         scienceBased: {
           percentage: "95%",
@@ -286,7 +287,7 @@ const translations = {
     },
     about: {
       title: "אודות BetterChoice",
-      description1: "BetterChoice הוא פלטפורמה מתקדמת לבריאות ואורח חיים בריא, המבוססת על מחקר מדעי וטכנולוגיה חדשנית. אנו מספקים פתרונות מקיפים לכל מי שרוצה לשפר את איכות החיים שלו.",
+      description1: "BetterChoice היא פלטפורמה מתקדמת לבריאות ואורח חיים בריא, המתבססת על מחקר מדעי וטכנולוגיה חדשנית. אנו מספקים פתרונות מקיפים לכל מי שרוצה לשפר את איכות החיים שלו.",
       description2: "עם צוות של מומחים מובילים בתחום הבריאות, התזונה והכושר, אנו מציעים שירותים מותאמים אישית לכל מטרה ויעד בריאותי.",
       features: [
         "צוות מומחים מוסמכים",
@@ -308,7 +309,7 @@ const translations = {
         oldReality: {
           title: "המציאות הישנה",
           points: [
-            "לא תמיד יש לך זמן לעצור ולנשום בין לקוחות",
+            "לא תמיד יש לך זמן לעצור ולנשום בין לקוח ללקוח",
             "הראש שלך מלא - ואתה מפחד לשכוח משהו חשוב",
             "עוד תפריט, עוד מעקב, עוד הודעה שלא היה לך זמן לענות עליה",
             "זה לא שאתה לא מקצועי - פשוט אין לך כלי שעובד בשבילך"
@@ -317,7 +318,7 @@ const translations = {
         newReality: {
           title: "המציאות החדשה",
           points: [
-            "פתאום הכל במקום אחד - ואתה רגוע",
+            "לפתע הכל במקום אחד - ואתה רגוע",
             "אין צורך לרוץ אחרי נתונים - הם באים אליך",
             "יש לך קליניקה חכמה שמבינה בדיוק איך אתה עובד",
             "הלקוחות מקבלים חוויה אחרת. ואתה מקבל את עצמך בחזרה"
@@ -457,7 +458,7 @@ const translations = {
     },
     learning: {
       title: "ספריית הלמידה",
-      subtitle: "השלם את השיעורים שלך, צפה בנושאי השיעורים וסקור שיעורים שכבר סיימת",
+      subtitle: "השלם את השיעורים שלך, צפה בנושאי הקורסים וחזור על שיעורים שכבר סיימת",
       nutrition: {
         title: "שיעורי תזונה",
         description: "למד על עקרונות התזונה הבריאה והמאוזנת",
@@ -579,7 +580,7 @@ const translations = {
       michael: {
         name: "מיכאל לוי",
         time: "לפני 3 שעות",
-        message: "ריצתי 10 ק\"מ לראשונה בחיים! הרגשה מדהימה!",
+        message: "ריצתי 10 קילומטר לראשונה בחיים! הרגשה מדהימה!",
         comments: "18 תגובות"
       },
       rachel: {
@@ -624,7 +625,7 @@ const translations = {
         phone: "טלפון",
         email: "אימייל",
         address: "כתובת",
-        addressValue: "רחוב הבריאות 123, תל אביב"
+        addressValue: "מסקיט 10, הרצליה"
       },
       hours: {
         title: "שעות פעילות",
@@ -733,6 +734,18 @@ const translations = {
         sending: "שולח...",
         thinking: "הבוט חושב...",
         error: "שגיאה בשליחת ההודעה"
+      },
+      knowledgePage: {
+        title: "ידע והשראה",
+        subtitle: "מחקרים מדעיים מובילים בתחום התזונה, הבריאות והפעילות הגופנית",
+        sectionTitle: "מחקרים מדעיים מובילים",
+        sectionDescription: "חמישה מחקרים מדעיים מוכחים ומעניינים שמראים את הקשר בין תזונה, פעילות גופנית ובריאות",
+        keyFindings: "ממצאים עיקריים:",
+        whyInteresting: "למה זה מעניין:",
+        readFullStudy: "קרא במלואו",
+        moreStudiesTitle: "מחקרים נוספים בקרוב",
+        moreStudiesDescription: "אנו מוסיפים בקביעות מחקרים חדשים ומעודכנים מהספרות המדעית המובילה בעולם",
+        backToHome: "חזרה לעמוד הבית"
       }
     }
   },
@@ -1466,6 +1479,18 @@ const translations = {
         sending: "Sending...",
         thinking: "Bot is thinking...",
         error: "Error sending message"
+      },
+      knowledgePage: {
+        title: "Knowledge & Inspiration",
+        subtitle: "Leading Scientific Research in Nutrition, Health, and Physical Activity",
+        sectionTitle: "Evidence-Based Scientific Studies",
+        sectionDescription: "Five well-known, evidence-based, and genuinely interesting scientific papers on nutrition, health, and exercise",
+        keyFindings: "Key Findings:",
+        whyInteresting: "Why it's interesting:",
+        readFullStudy: "Read Full Study",
+        moreStudiesTitle: "More Studies Coming Soon",
+        moreStudiesDescription: "We regularly add new and updated research from the world's leading scientific literature",
+        backToHome: "Back to Home"
       }
     }
   }

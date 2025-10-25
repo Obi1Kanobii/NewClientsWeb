@@ -276,10 +276,21 @@ const AboutPage = () => {
               {/* Gal Becker */}
               <div className={`${themeClasses.bgCard} rounded-2xl p-8 shadow-xl border border-slate-700 hover:border-emerald-500/30 transition-all duration-300 animate-slideInUp`}>
                 <div className="text-center">
-                  <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/25">
-                    <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"/>
-                    </svg>
+                  <div className="w-24 h-24 mx-auto mb-6 relative">
+                    <img 
+                      src="/gal.jpg" 
+                      alt="Gal Becker" 
+                      className="w-full h-full rounded-full object-cover shadow-lg shadow-emerald-500/25 border-4 border-emerald-500/20"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                    <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center absolute inset-0 shadow-lg shadow-emerald-500/25" style={{display: 'none'}}>
+                      <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"/>
+                      </svg>
+                    </div>
                   </div>
                   <h3 className="text-2xl font-bold text-white mb-2">Gal Becker</h3>
                   <p className="text-emerald-400 text-lg font-semibold mb-4">
@@ -305,10 +316,21 @@ const AboutPage = () => {
               {/* Yarden Ovadia */}
               <div className={`${themeClasses.bgCard} rounded-2xl p-8 shadow-xl border border-slate-700 hover:border-emerald-500/30 transition-all duration-300 animate-slideInUp`} style={{ animationDelay: '0.2s' }}>
                 <div className="text-center">
-                  <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/25">
-                    <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"/>
-                    </svg>
+                  <div className="w-24 h-24 mx-auto mb-6 relative">
+                    <img 
+                      src="/yarden.png" 
+                      alt="Yarden Ovadia" 
+                      className="w-full h-full rounded-full object-cover shadow-lg shadow-emerald-500/25 border-4 border-emerald-500/20"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                    <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center absolute inset-0 shadow-lg shadow-emerald-500/25" style={{display: 'none'}}>
+                      <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"/>
+                      </svg>
+                    </div>
                   </div>
                   <h3 className="text-2xl font-bold text-white mb-2">Yarden Ovadia</h3>
                   <p className="text-emerald-400 text-lg font-semibold mb-4">
