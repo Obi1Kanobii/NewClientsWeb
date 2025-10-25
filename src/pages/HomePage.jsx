@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -7,7 +7,7 @@ import { signOut } from '../supabase/auth';
 import { supabase } from '../supabase/supabaseClient';
 
 function HomePage() {
-  const { language, direction, toggleLanguage, t, isTransitioning } = useLanguage();
+  const { language, direction, toggleLanguage, t } = useLanguage();
   const { user, isAuthenticated, userDisplayName, loading } = useAuth();
   const { isDarkMode, toggleTheme, themeClasses } = useTheme();
   const [isProfileIncomplete, setIsProfileIncomplete] = useState(false);
@@ -40,9 +40,9 @@ function HomePage() {
     if (user && isAuthenticated) {
       checkProfileCompletion();
     }
-  }, [user, isAuthenticated]);
+  }, [user, isAuthenticated, checkProfileCompletion]);
 
-  const checkProfileCompletion = async () => {
+  const checkProfileCompletion = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('clients')
@@ -71,7 +71,7 @@ function HomePage() {
     } catch (error) {
       console.error('Error checking profile completion:', error);
     }
-  };
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -387,9 +387,9 @@ function HomePage() {
                 </div>
                 <p className={themeClasses.textSecondary}>{t.painSection.statistics.dietFailure.description}</p>
                 <p className={`text-sm ${themeClasses.textMuted} mt-2`}>{t.painSection.statistics.dietFailure.source}</p>
-                <a href="#" className="text-emerald-500 hover:text-emerald-400 text-sm flex items-center justify-center mt-2">
+                <button className="text-emerald-500 hover:text-emerald-400 text-sm flex items-center justify-center mt-2">
                   {t.painSection.statistics.dietFailure.link} ↗️
-                </a>
+                </button>
               </div>
               <div className="text-center">
                 <div className={`text-4xl font-bold ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'} mb-2`}>
@@ -397,9 +397,9 @@ function HomePage() {
                 </div>
                 <p className={themeClasses.textSecondary}>{t.painSection.statistics.motivationLoss.description}</p>
                 <p className={`text-sm ${themeClasses.textMuted} mt-2`}>{t.painSection.statistics.motivationLoss.source}</p>
-                <a href="#" className="text-emerald-500 hover:text-emerald-400 text-sm flex items-center justify-center mt-2">
+                <button className="text-emerald-500 hover:text-emerald-400 text-sm flex items-center justify-center mt-2">
                   {t.painSection.statistics.motivationLoss.link} ↗️
-                </a>
+                </button>
               </div>
               <div className="text-center">
                 <div className={`text-4xl font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} mb-2`}>
@@ -407,9 +407,9 @@ function HomePage() {
                 </div>
                 <p className={themeClasses.textSecondary}>{t.painSection.statistics.noWorkoutTime.description}</p>
                 <p className={`text-sm ${themeClasses.textMuted} mt-2`}>{t.painSection.statistics.noWorkoutTime.source}</p>
-                <a href="#" className="text-emerald-500 hover:text-emerald-400 text-sm flex items-center justify-center mt-2">
+                <button className="text-emerald-500 hover:text-emerald-400 text-sm flex items-center justify-center mt-2">
                   {t.painSection.statistics.noWorkoutTime.link} ↗️
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -736,9 +736,9 @@ function HomePage() {
                       <h5 className={`font-bold ${themeClasses.textPrimary}`}>{t.scienceSection.research.articles.aiOptimization.title}</h5>
                     </div>
                     <p className={`${themeClasses.textSecondary} text-sm mb-2`}>{t.scienceSection.research.articles.aiOptimization.description}</p>
-                    <a href="#" className="text-emerald-500 hover:text-emerald-400 text-sm flex items-center">
+                    <button className="text-emerald-500 hover:text-emerald-400 text-sm flex items-center">
                       {t.scienceSection.research.articles.aiOptimization.link} ↗️
-                    </a>
+                    </button>
                   </div>
                   
                   <div className={`${themeClasses.bgCard} rounded-lg p-4 ${themeClasses.shadowCard}`}>
@@ -747,9 +747,9 @@ function HomePage() {
                       <h5 className={`font-bold ${themeClasses.textPrimary}`}>{t.scienceSection.research.articles.personalizedNutrition.title}</h5>
                     </div>
                     <p className={`${themeClasses.textSecondary} text-sm mb-2`}>{t.scienceSection.research.articles.personalizedNutrition.description}</p>
-                    <a href="#" className="text-emerald-500 hover:text-emerald-400 text-sm flex items-center">
+                    <button className="text-emerald-500 hover:text-emerald-400 text-sm flex items-center">
                       {t.scienceSection.research.articles.personalizedNutrition.link} ↗️
-                    </a>
+                    </button>
                   </div>
                   
                   <div className={`${themeClasses.bgCard} rounded-lg p-4 ${themeClasses.shadowCard}`}>
@@ -758,9 +758,9 @@ function HomePage() {
                       <h5 className={`font-bold ${themeClasses.textPrimary}`}>{t.scienceSection.research.articles.digitalTechnology.title}</h5>
                     </div>
                     <p className={`${themeClasses.textSecondary} text-sm mb-2`}>{t.scienceSection.research.articles.digitalTechnology.description}</p>
-                    <a href="#" className="text-emerald-500 hover:text-emerald-400 text-sm flex items-center">
+                    <button className="text-emerald-500 hover:text-emerald-400 text-sm flex items-center">
                       {t.scienceSection.research.articles.digitalTechnology.link} ↗️
-                    </a>
+                    </button>
                   </div>
                 </div>
               </div>

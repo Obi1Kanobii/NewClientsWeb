@@ -4,7 +4,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 
 const AboutPage = () => {
-  const { language, t, direction, toggleLanguage, isTransitioning } = useLanguage();
+  const { language, direction, toggleLanguage } = useLanguage();
   const { isDarkMode, toggleTheme, themeClasses } = useTheme();
 
   return (

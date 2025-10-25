@@ -4,7 +4,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 
 const KnowledgePage = () => {
-  const { language, t, direction, toggleLanguage, isTransitioning } = useLanguage();
+  const { language, t, direction, toggleLanguage } = useLanguage();
   const { isDarkMode, toggleTheme, themeClasses } = useTheme();
 
   const studies = [
