@@ -91,20 +91,27 @@ app.post('/api/stripe/sync-to-database', async (req, res) => {
         else if (productId === 'prod_SbI1AIv2A46oJ9') subscriptionType = 'nutrition_training';
         else if (productId === 'prod_SbI0A23T20wul3') subscriptionType = 'nutrition_only';
         
-        // Determine commitment period based on price ID (3 months vs 6 months)
-        let commitmentMonths = 3; // Default 3 months
+        // Determine commitment period based on exact price ID mapping
+        let commitmentMonths = null; // Default no commitment 
         const currentDate = new Date(subscription.current_period_start * 1000);
         
-        // Check if this is a 6-month commitment price (Option 2 prices are typically 6-month)
-        if (priceId === 'price_1Rg5R8HIeYfvCylDxX2PsOrR' || // BetterPro Option 2
-            priceId === 'price_1Rg5R4HIeYfvCylDAshP6FOk' || // Nutrition+Training Option 2
-            priceId === 'price_1Rg5QtHIeYfvCylDwr9v599a') {  // Nutrition Only Option 2
-          commitmentMonths = 6;
+        // Only BetterPro plans have commitment periods
+        if (priceId === 'price_1Rg5R8HIeYfvCylDJ4Xfg5hr') {
+          commitmentMonths = 3; // BetterPro 3-Month Plan
+        } else if (priceId === 'price_1Rg5R8HIeYfvCylDxX2PsOrR') {
+          commitmentMonths = 6; // BetterPro 6-Month Plan
         }
+        // Other products (Nutrition, Training, etc.) have no commitment period
         
-        // Calculate commitment end date
-        const commitmentEndDate = new Date(currentDate);
-        commitmentEndDate.setMonth(commitmentEndDate.getMonth() + commitmentMonths);
+        // Calculate commitment end date (only if there's a commitment period)
+        let commitmentEndDate = null;
+        let canCancel = true; // Default: can cancel anytime
+        
+        if (commitmentMonths) {
+          commitmentEndDate = new Date(currentDate);
+          commitmentEndDate.setMonth(commitmentEndDate.getMonth() + commitmentMonths);
+          canCancel = new Date() >= commitmentEndDate; // Can only cancel after commitment period
+        }
         
         const subscriptionData = {
           user_id: customerId,
@@ -120,8 +127,8 @@ app.post('/api/stripe/sync-to-database', async (req, res) => {
           amount_total: amount,
           currency: currency,
           commitment_months: commitmentMonths,
-          commitment_end_date: commitmentEndDate.toISOString(),
-          can_cancel: new Date() >= commitmentEndDate, // Can only cancel after commitment period
+          commitment_end_date: commitmentEndDate ? commitmentEndDate.toISOString() : null,
+          can_cancel: canCancel,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
@@ -668,20 +675,27 @@ async function handleSubscriptionCreated(subscription) {
     else if (productId === 'prod_SbI1AIv2A46oJ9') subscriptionType = 'nutrition_training';
     else if (productId === 'prod_SbI0A23T20wul3') subscriptionType = 'nutrition_only';
     
-    // Determine commitment period based on price ID (3 months vs 6 months)
-    let commitmentMonths = 3; // Default 3 months
+    // Determine commitment period based on exact price ID mapping
+    let commitmentMonths = null; // Default no commitment
     const currentDate = new Date(subscription.current_period_start * 1000);
     
-    // Check if this is a 6-month commitment price (Option 2 prices are typically 6-month)
-    if (priceId === 'price_1Rg5R8HIeYfvCylDxX2PsOrR' || // BetterPro Option 2
-        priceId === 'price_1Rg5R4HIeYfvCylDAshP6FOk' || // Nutrition+Training Option 2
-        priceId === 'price_1Rg5QtHIeYfvCylDwr9v599a') {  // Nutrition Only Option 2
-      commitmentMonths = 6;
+    // Only BetterPro plans have commitment periods
+    if (priceId === 'price_1Rg5R8HIeYfvCylDJ4Xfg5hr') {
+      commitmentMonths = 3; // BetterPro 3-Month Plan
+    } else if (priceId === 'price_1Rg5R8HIeYfvCylDxX2PsOrR') {
+      commitmentMonths = 6; // BetterPro 6-Month Plan
     }
+    // Other products (Nutrition, Training, etc.) have no commitment period
     
-    // Calculate commitment end date
-    const commitmentEndDate = new Date(currentDate);
-    commitmentEndDate.setMonth(commitmentEndDate.getMonth() + commitmentMonths);
+    // Calculate commitment end date (only if there's a commitment period)
+    let commitmentEndDate = null;
+    let canCancel = true; // Default: can cancel anytime
+    
+    if (commitmentMonths) {
+      commitmentEndDate = new Date(currentDate);
+      commitmentEndDate.setMonth(commitmentEndDate.getMonth() + commitmentMonths);
+      canCancel = new Date() >= commitmentEndDate; // Can only cancel after commitment period
+    }
     
     const subscriptionData = {
       user_id: userId,
@@ -697,8 +711,8 @@ async function handleSubscriptionCreated(subscription) {
       amount_total: amount,
       currency: currency,
       commitment_months: commitmentMonths,
-      commitment_end_date: commitmentEndDate.toISOString(),
-      can_cancel: new Date() >= commitmentEndDate, // Can only cancel after commitment period
+      commitment_end_date: commitmentEndDate ? commitmentEndDate.toISOString() : null,
+      can_cancel: canCancel,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -735,20 +749,27 @@ async function handleSubscriptionUpdated(subscription) {
     // Get product and price info for commitment tracking
     const priceId = subscription.items.data[0]?.price?.id;
     
-    // Determine commitment period based on price ID (3 months vs 6 months)
-    let commitmentMonths = 3; // Default 3 months
+    // Determine commitment period based on exact price ID mapping
+    let commitmentMonths = null; // Default no commitment
     const currentDate = new Date(subscription.current_period_start * 1000);
     
-    // Check if this is a 6-month commitment price (Option 2 prices are typically 6-month)
-    if (priceId === 'price_1Rg5R8HIeYfvCylDxX2PsOrR' || // BetterPro Option 2
-        priceId === 'price_1Rg5R4HIeYfvCylDAshP6FOk' || // Nutrition+Training Option 2
-        priceId === 'price_1Rg5QtHIeYfvCylDwr9v599a') {  // Nutrition Only Option 2
-      commitmentMonths = 6;
+    // Only BetterPro plans have commitment periods
+    if (priceId === 'price_1Rg5R8HIeYfvCylDJ4Xfg5hr') {
+      commitmentMonths = 3; // BetterPro 3-Month Plan
+    } else if (priceId === 'price_1Rg5R8HIeYfvCylDxX2PsOrR') {
+      commitmentMonths = 6; // BetterPro 6-Month Plan
     }
+    // Other products (Nutrition, Training, etc.) have no commitment period
     
-    // Calculate commitment end date
-    const commitmentEndDate = new Date(currentDate);
-    commitmentEndDate.setMonth(commitmentEndDate.getMonth() + commitmentMonths);
+    // Calculate commitment end date (only if there's a commitment period)
+    let commitmentEndDate = null;
+    let canCancel = true; // Default: can cancel anytime
+    
+    if (commitmentMonths) {
+      commitmentEndDate = new Date(currentDate);
+      commitmentEndDate.setMonth(commitmentEndDate.getMonth() + commitmentMonths);
+      canCancel = new Date() >= commitmentEndDate; // Can only cancel after commitment period
+    }
     
     // Update subscription record
     const updateData = {
@@ -757,8 +778,8 @@ async function handleSubscriptionUpdated(subscription) {
       current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
       cancel_at_period_end: subscription.cancel_at_period_end || false,
       commitment_months: commitmentMonths,
-      commitment_end_date: commitmentEndDate.toISOString(),
-      can_cancel: new Date() >= commitmentEndDate, // Can only cancel after commitment period
+      commitment_end_date: commitmentEndDate ? commitmentEndDate.toISOString() : null,
+      can_cancel: canCancel,
       updated_at: new Date().toISOString()
     };
     
