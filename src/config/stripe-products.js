@@ -31,8 +31,8 @@ export const STRIPE_PRICES = {
   // Nutrition Only Biweekly
   NUTRITION_ONLY_BIWEEKLY: 'price_1Rg5RGHIeYfvCylDxuQODpK4',
   
-  // Consultation - $650
-  CONSULTATION: 'price_1Rg5R6HIeYfvCylDcsV3T2Kr'
+  // Consultation - $650 (One-time payment)
+  CONSULTATION: 'price_1RY3uZHIeYfvCylD4mylbEP4'
 };
 
 // Product configuration with metadata

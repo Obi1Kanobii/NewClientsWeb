@@ -35,9 +35,13 @@ export const StripeProvider = ({ children }) => {
 
     try {
       // Determine if this is a subscription or one-time payment
-      const { getPriceById } = await import('../config/stripe-products');
+      const { getPriceById, STRIPE_PRICES } = await import('../config/stripe-products');
       const priceInfo = getPriceById(priceId);
-      const mode = priceInfo?.interval ? 'subscription' : 'payment';
+      
+      // Check if this is specifically a consultation (one-time payment)
+      const isConsultation = priceId === STRIPE_PRICES.CONSULTATION;
+      const mode = isConsultation ? 'payment' : (priceInfo?.interval ? 'subscription' : 'payment');
+
 
       const requestBody = {
         priceId,
