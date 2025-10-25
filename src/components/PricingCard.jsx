@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 
-const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '', hasActiveSubscription = false }) => {
+const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '', hasActiveSubscription = false, hasAnyActiveSubscription = false }) => {
   const { createCheckoutSession, loading, error } = useStripe();
   const { user, isAuthenticated } = useAuth();
   const { language } = useLanguage();
@@ -15,6 +15,9 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '', 
   // Check if this is a consultation product (can always be purchased)
   const isConsultation = product.name.toLowerCase().includes('consultation') || 
                          product.nameHebrew?.includes('יעוץ');
+  
+  // Determine if this product should be blocked
+  const isBlocked = hasAnyActiveSubscription && !isConsultation;
 
   const handlePriceSelect = (priceId) => {
     setSelectedPrice(priceId);
@@ -29,11 +32,11 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '', 
       return;
     }
 
-    // Check if user has active subscription for this product (except consultations)
-    if (hasActiveSubscription && !isConsultation) {
+    // Check if user should be blocked from purchasing (has any active subscription and this is not a consultation)
+    if (isBlocked) {
       alert(language === 'hebrew' ? 
-        'יש לך כבר מנוי פעיל לתוכנית זו' : 
-        'You already have an active subscription for this plan');
+        'יש לך כבר מנוי פעיל. ניתן לרכוש רק יעוץ אישי.' : 
+        'You already have an active subscription. You can only purchase consultations.');
       return;
     }
 
@@ -130,8 +133,21 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '', 
         </div>
 
         {/* Price Options */}
-        {hasActiveSubscription && !isConsultation ? (
-          // Active subscription message (hide pricing)
+        {isBlocked ? (
+          // Blocked due to existing subscription message
+          <div className="mb-6 text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+            <div className={`text-lg font-semibold ${themeClasses.textPrimary} mb-2`}>
+              🚫 {language === 'hebrew' ? 'לא זמין' : 'Not Available'}
+            </div>
+            <div className={`text-sm ${themeClasses.textSecondary}`}>
+              {language === 'hebrew' ? 
+                'יש לך כבר מנוי פעיל. ניתן לרכוש רק יעוץ אישי.' : 
+                'You have an active subscription. Only consultations available.'
+              }
+            </div>
+          </div>
+        ) : hasActiveSubscription ? (
+          // Already have this specific product
           <div className="mb-6 text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
             <div className={`text-lg font-semibold ${themeClasses.textPrimary} mb-2`}>
               ✅ {language === 'hebrew' ? 'מנוי פעיל' : 'Active Subscription'}
@@ -239,14 +255,16 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '', 
         {/* CTA Button */}
         <button
           onClick={handlePurchase}
-          disabled={loading || !selectedPrice || (hasActiveSubscription && !isConsultation)}
+          disabled={loading || !selectedPrice || isBlocked}
           className={`
             w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 transform hover:scale-105
-            ${hasActiveSubscription && !isConsultation
+            ${isBlocked
               ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-              : selectedPriceObj?.popular || hasPopularPrice
-                ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg'
-                : 'bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900'
+              : hasActiveSubscription
+                ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                : selectedPriceObj?.popular || hasPopularPrice
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg'
+                  : 'bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900'
             }
             disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
           `}
@@ -256,7 +274,9 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '', 
               <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
               {language === 'hebrew' ? 'טוען...' : 'Loading...'}
             </div>
-          ) : hasActiveSubscription && !isConsultation ? (
+          ) : isBlocked ? (
+            language === 'hebrew' ? 'לא זמין' : 'Not Available'
+          ) : hasActiveSubscription ? (
             language === 'hebrew' ? 'מנוי פעיל' : 'Active Subscription'
           ) : (
             <>

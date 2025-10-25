@@ -1894,6 +1894,22 @@ const PricingTab = ({ themeClasses, user, language }) => {
     });
   };
 
+  // Check if user has ANY active subscription (not consultation)
+  const hasAnyActiveSubscription = () => {
+    return userSubscriptions.some(sub => {
+      if (sub.status !== 'active') return false;
+      
+      // Check if any item in the subscription is NOT a consultation
+      return sub.items?.data?.some(item => {
+        const itemProductId = item.price?.product;
+        const product = getProduct(itemProductId);
+        const isConsultation = product?.name?.toLowerCase().includes('consultation') || 
+                              product?.nameHebrew?.includes('יעוץ');
+        return !isConsultation; // Return true if it's NOT a consultation (meaning they have a non-consultation subscription)
+      });
+    });
+  };
+
   const getFilteredProducts = () => {
     switch (activeCategory) {
       case 'premium':
@@ -2050,6 +2066,7 @@ const PricingTab = ({ themeClasses, user, language }) => {
                 <PricingCard
                   product={product}
                   hasActiveSubscription={hasActiveSubscription(product.id)}
+                  hasAnyActiveSubscription={hasAnyActiveSubscription()}
                   className={`transform hover:scale-105 transition-all duration-300 ${
                     hasActiveSubscription(product.id) ? 'ring-2 ring-emerald-500' : ''
                   }`}
