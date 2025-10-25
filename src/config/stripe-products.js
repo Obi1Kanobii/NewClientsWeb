@@ -39,7 +39,9 @@ export const STRIPE_PRICES = {
 export const PRODUCT_CONFIG = {
   [STRIPE_PRODUCTS.BETTER_PRO]: {
     name: 'BetterPro Plan',
+    nameHebrew: 'תוכנית BetterPro',
     description: 'Complete nutrition and training program with premium features',
+    descriptionHebrew: 'תוכנית תזונה ואימונים מלאה עם תכונות פרימיום',
     features: [
       'Advanced meal planning',
       'Personal trainer support', 
@@ -47,11 +49,19 @@ export const PRODUCT_CONFIG = {
       'Priority support',
       'Custom workout plans'
     ],
+    featuresHebrew: [
+      'תכנון ארוחות מתקדם',
+      'תמיכת מאמן אישי',
+      'מעקב התקדמות',
+      'תמיכה עדיפות',
+      'תוכניות אימון מותאמות'
+    ],
     category: 'premium',
     prices: [
       {
         id: STRIPE_PRICES.BETTER_PRO_OPTION_1,
         name: '3 Month Plan',
+        nameHebrew: 'תוכנית 3 חודשים',
         interval: 'month',
         interval_count: 1,
         commitment: 3,
@@ -63,6 +73,7 @@ export const PRODUCT_CONFIG = {
       {
         id: STRIPE_PRICES.BETTER_PRO_OPTION_2, 
         name: '6 Month Plan',
+        nameHebrew: 'תוכנית 6 חודשים',
         interval: 'month',
         interval_count: 1,
         commitment: 6,
@@ -77,7 +88,9 @@ export const PRODUCT_CONFIG = {
   
   [STRIPE_PRODUCTS.NUTRITION_TRAINING]: {
     name: 'Nutrition + Training',
+    nameHebrew: 'תזונה + אימונים',
     description: 'Comprehensive nutrition guidance with training support',
+    descriptionHebrew: 'הדרכה תזונתית מקיפה עם תמיכה באימונים',
     features: [
       'Personalized meal plans',
       'Workout routines',
@@ -85,11 +98,19 @@ export const PRODUCT_CONFIG = {
       'Expert consultations',
       'Mobile app access'
     ],
+    featuresHebrew: [
+      'תוכניות ארוחות מותאמות אישית',
+      'שגרות אימון',
+      'מעקב התקדמות',
+      'יעוצים מומחים',
+      'גישה לאפליקציה'
+    ],
     category: 'complete',
     prices: [
       {
         id: STRIPE_PRICES.NUTRITION_TRAINING_MONTHLY_1,
         name: 'Monthly Sessions',
+        nameHebrew: 'מפגשים חודשיים',
         interval: 'month',
         interval_count: 1,
         frequency: 'monthly',
@@ -101,6 +122,7 @@ export const PRODUCT_CONFIG = {
       {
         id: STRIPE_PRICES.NUTRITION_TRAINING_MONTHLY_2,
         name: 'Monthly Premium',
+        nameHebrew: 'פרימיום חודשי',
         interval: 'month', 
         interval_count: 1,
         frequency: 'monthly',
@@ -112,6 +134,7 @@ export const PRODUCT_CONFIG = {
       {
         id: STRIPE_PRICES.NUTRITION_TRAINING_BIWEEKLY,
         name: 'Bi-weekly Sessions',
+        nameHebrew: 'מפגשים דו שבועיים',
         interval: 'month',
         interval_count: 1,
         frequency: 'biweekly',
@@ -125,7 +148,9 @@ export const PRODUCT_CONFIG = {
   
   [STRIPE_PRODUCTS.NUTRITION_ONLY]: {
     name: 'Nutrition Only',
+    nameHebrew: 'תזונה בלבד',
     description: 'Focused nutrition planning and guidance',
+    descriptionHebrew: 'תכנון תזונתי ממוקד והדרכה',
     features: [
       'Custom meal plans',
       'Nutritional analysis',
@@ -133,11 +158,19 @@ export const PRODUCT_CONFIG = {
       'Email support',
       'Recipe library'
     ],
+    featuresHebrew: [
+      'תוכניות ארוחות מותאמות',
+      'ניתוח תזונתי',
+      'מעקב התקדמות',
+      'תמיכה במייל',
+      'ספריית מתכונים'
+    ],
     category: 'nutrition',
     prices: [
       {
         id: STRIPE_PRICES.NUTRITION_ONLY_MONTHLY_1,
         name: 'Monthly Basic',
+        nameHebrew: 'בסיסי חודשי',
         interval: 'month',
         interval_count: 1,
         frequency: 'monthly',
@@ -149,6 +182,7 @@ export const PRODUCT_CONFIG = {
       {
         id: STRIPE_PRICES.NUTRITION_ONLY_MONTHLY_2,
         name: 'Monthly Pro', 
+        nameHebrew: 'מקצועי חודשי',
         interval: 'month',
         interval_count: 1,
         frequency: 'monthly',
@@ -160,6 +194,7 @@ export const PRODUCT_CONFIG = {
       {
         id: STRIPE_PRICES.NUTRITION_ONLY_BIWEEKLY,
         name: 'Bi-weekly Support',
+        nameHebrew: 'תמיכה דו שבועית',
         interval: 'month',
         interval_count: 1, 
         frequency: 'biweekly',
@@ -173,7 +208,9 @@ export const PRODUCT_CONFIG = {
   
   [STRIPE_PRODUCTS.PODCAST]: {
     name: 'Podcast Room',
+    nameHebrew: 'חדר הפודקאסט',
     description: 'Access to premium podcast content and community',
+    descriptionHebrew: 'גישה לתוכן פודקאסט פרימיום וקהילה',
     features: [
       'Exclusive podcast episodes',
       'Community access',
@@ -181,11 +218,19 @@ export const PRODUCT_CONFIG = {
       'Downloadable content',
       'Early access to new content'
     ],
+    featuresHebrew: [
+      'פרקי פודקאסט בלעדיים',
+      'גישה לקהילה',
+      'מפגשי שאלות ותשובות חיים',
+      'תוכן להורדה',
+      'גישה מוקדמת לתוכן חדש'
+    ],
     category: 'content',
     prices: [
       {
         id: STRIPE_PRICES.PODCAST_ROOM,
         name: 'Monthly Access',
+        nameHebrew: 'גישה חודשית',
         interval: 'month',
         interval_count: 1,
         amount: 15000, // ₪150/month in agorot
@@ -198,7 +243,9 @@ export const PRODUCT_CONFIG = {
   
   [STRIPE_PRODUCTS.CONSULTATION]: {
     name: 'One-on-One Consultation',
+    nameHebrew: 'יעוץ אישי',
     description: 'Personal consultation with nutrition expert',
+    descriptionHebrew: 'יעוץ אישי עם מומחה תזונה',
     features: [
       '60-minute session',
       'Personalized recommendations',
@@ -206,11 +253,19 @@ export const PRODUCT_CONFIG = {
       'Action plan',
       'Progress evaluation'
     ],
+    featuresHebrew: [
+      'מפגש של 60 דקות',
+      'המלצות מותאמות אישית',
+      'תמיכה המשך',
+      'תוכנית פעולה',
+      'הערכת התקדמות'
+    ],
     category: 'consultation',
     prices: [
       {
         id: STRIPE_PRICES.CONSULTATION,
         name: 'Single Session',
+        nameHebrew: 'מפגש יחיד',
         interval: null, // One-time payment
         amount: 65000, // ₪650.00 in agorot
         amountUSD: 18600, // $186.00 in cents

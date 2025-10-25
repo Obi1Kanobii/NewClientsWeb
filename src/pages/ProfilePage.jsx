@@ -1967,7 +1967,8 @@ const PricingTab = ({ themeClasses, user, language }) => {
                         {(() => {
                           const productId = subscription.items?.data?.[0]?.price?.product;
                           const product = getProduct(productId);
-                          return product?.name || productId || 'Subscription';
+                          if (!product) return productId || 'Subscription';
+                          return language === 'hebrew' ? (product.nameHebrew || product.name) : product.name;
                         })()}
                       </p>
                       <p className={`${themeClasses.textSecondary} text-sm`}>

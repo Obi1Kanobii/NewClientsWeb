@@ -96,10 +96,10 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }
           <div className="flex justify-between items-start mb-4">
             <div className="flex-1">
               <h3 className={`text-xl font-bold ${themeClasses.textPrimary} mb-2`}>
-                {product.name}
+                {language === 'hebrew' ? (product.nameHebrew || product.name) : product.name}
               </h3>
               <p className={`${themeClasses.textSecondary} text-sm`}>
-                {product.description}
+                {language === 'hebrew' ? (product.descriptionHebrew || product.description) : product.description}
               </p>
             </div>
             
@@ -146,11 +146,11 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }
                     />
                     <div>
                       <div className={`font-medium ${themeClasses.textPrimary}`}>
-                        {price.name}
+                        {language === 'hebrew' ? (price.nameHebrew || price.name) : price.name}
                       </div>
                       {price.commitment && (
                         <div className={`text-xs ${themeClasses.textMuted}`}>
-                          {price.commitment} month commitment
+                          {price.commitment} {language === 'hebrew' ? 'חודשי מחויבות' : 'month commitment'}
                         </div>
                       )}
                     </div>
@@ -189,7 +189,7 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }
                 )}
                 {product.prices[0].commitment && (
                   <div className={`text-sm ${themeClasses.textMuted} mt-2`}>
-                    {product.prices[0].commitment} month commitment
+                    {product.prices[0].commitment} {language === 'hebrew' ? 'חודשי מחויבות' : 'month commitment'}
                   </div>
                 )}
               </div>
@@ -200,7 +200,7 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '' }
         {/* Features */}
         {product.features && (
           <ul className="space-y-3 mb-6 text-sm">
-            {product.features.map((feature, index) => (
+            {(language === 'hebrew' ? (product.featuresHebrew || product.features) : product.features).map((feature, index) => (
               <li key={index} className={`flex items-center ${themeClasses.textSecondary}`}>
                 <svg className="w-4 h-4 text-green-500 dark:text-green-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
