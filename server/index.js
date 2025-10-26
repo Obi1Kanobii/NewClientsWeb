@@ -940,6 +940,82 @@ async function handlePaymentFailed(invoice) {
 }
 
 // ====================================
+// CONTACT FORM ENDPOINT
+// ====================================
+
+app.post('/api/contact', async (req, res) => {
+  try {
+    const { fullName, email, phone, message, timestamp } = req.body;
+
+    // Basic validation
+    if (!fullName || !email || !message) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        message: 'Full name, email, and message are required'
+      });
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        error: 'Invalid email format',
+        message: 'Please provide a valid email address'
+      });
+    }
+
+    // Get client IP and user agent
+    const ipAddress = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'] || 'unknown';
+    const userAgent = req.headers['user-agent'] || 'unknown';
+
+    // Save to Supabase
+    const { data, error } = await supabase
+      .from('contact_messages')
+      .insert([
+        {
+          full_name: fullName,
+          email: email,
+          phone: phone || null,
+          message: message,
+          ip_address: ipAddress,
+          user_agent: userAgent,
+          created_at: timestamp || new Date().toISOString()
+        }
+      ])
+      .select();
+
+    if (error) {
+      console.error('Supabase error:', error);
+      return res.status(500).json({
+        error: 'Database error',
+        message: 'Failed to save contact message'
+      });
+    }
+
+    console.log('📧 Contact message saved to Supabase:', {
+      id: data[0]?.id,
+      fullName,
+      email,
+      phone: phone || 'Not provided',
+      ip: ipAddress
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Contact form submitted successfully',
+      id: data[0]?.id
+    });
+
+  } catch (error) {
+    console.error('Contact form error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'Failed to process contact form'
+    });
+  }
+});
+
+// ====================================
 // ERROR HANDLING
 // ====================================
 

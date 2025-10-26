@@ -135,11 +135,11 @@ const PricingCard = ({ product, selectedPriceId, onPriceSelect, className = '', 
         {/* Price Options */}
         {isBlocked ? (
           // Blocked due to existing subscription message
-          <div className="mb-6 text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-            <div className={`text-lg font-semibold ${themeClasses.textPrimary} mb-2`}>
+          <div className="mb-6 text-center p-4 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-600">
+            <div className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
               🚫 {language === 'hebrew' ? 'לא זמין' : 'Not Available'}
             </div>
-            <div className={`text-sm ${themeClasses.textSecondary}`}>
+            <div className="text-sm text-slate-600 dark:text-slate-400">
               {language === 'hebrew' ? 
                 'יש לך כבר מנוי פעיל. ניתן לרכוש רק יעוץ אישי.' : 
                 'You have an active subscription. Only consultations available.'

@@ -13,6 +13,15 @@ function HomePage() {
   const [isProfileIncomplete, setIsProfileIncomplete] = useState(false);
   const [commitmentPeriod, setCommitmentPeriod] = useState(3);
   const [showUSD, setShowUSD] = useState(false);
+  
+  // Contact form state
+  const [contactForm, setContactForm] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    message: ''
+  });
+  const [isSubmittingContact, setIsSubmittingContact] = useState(false);
 
   // Format price based on currency
   const formatPrice = (priceILS, priceUSD) => {
@@ -73,6 +82,64 @@ function HomePage() {
     }
   }, [user, isAuthenticated, checkProfileCompletion]);
 
+  // Contact form handlers
+  const handleContactChange = (e) => {
+    const { name, value } = e.target;
+    setContactForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmittingContact(true);
+
+    try {
+      // Send directly to Supabase
+      const { data, error } = await supabase
+        .from('contact_messages')
+        .insert([
+          {
+            full_name: contactForm.fullName,
+            email: contactForm.email,
+            phone: contactForm.phone || null,
+            message: contactForm.message,
+            user_agent: navigator.userAgent,
+            created_at: new Date().toISOString()
+          }
+        ])
+        .select();
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw new Error('Failed to save message');
+      }
+
+      alert(language === 'hebrew' ? 
+        'הודעתך נשלחה בהצלחה! נחזור אליך בהקדם.' : 
+        'Your message has been sent successfully! We will get back to you soon.'
+      );
+      
+      // Reset form
+      setContactForm({
+        fullName: '',
+        email: '',
+        phone: '',
+        message: ''
+      });
+
+    } catch (error) {
+      console.error('Error sending contact message:', error);
+      alert(language === 'hebrew' ? 
+        'שגיאה בשליחת ההודעה. אנא נסה שוב או צור קשר בטלפון.' : 
+        'Error sending message. Please try again or contact us by phone.'
+      );
+    } finally {
+      setIsSubmittingContact(false);
+    }
+  };
+
   return (
     <div className={`min-h-screen ${themeClasses.bgPrimary} language-transition language-text-transition`} dir={direction}>
       {/* Navigation */}
@@ -121,17 +188,15 @@ function HomePage() {
               </button>
               <button 
                 onClick={() => {
-                  if (!isAuthenticated) {
-                    window.location.href = '/login';
-                  } else {
-                    // Handle authenticated user action
-                    console.log('User is authenticated - handle join gym action');
-                  }
+                  alert(language === 'hebrew' ? 'תכונה זו נמצאת בפיתוח - בקרוב!' : 'This feature is currently in development - coming soon!');
                 }}
-                className={`border-2 border-emerald-600 ${isDarkMode ? 'text-emerald-400 hover:bg-emerald-600 hover:text-white' : 'text-emerald-600 hover:bg-emerald-600 hover:text-white'} px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 flex items-center justify-center`}
+                className={`border-2 border-gray-400 ${isDarkMode ? 'text-gray-400 hover:bg-gray-600 hover:text-white' : 'text-gray-500 hover:bg-gray-500 hover:text-white'} px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 flex items-center justify-center relative`}
               >
                 <span className="mr-2">🏋️</span>
                 {t.hero.buttons.joinGym}
+                <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                  {language === 'hebrew' ? 'בפיתוח' : 'Dev'}
+                </span>
               </button>
             </div>
             <div className="flex justify-center space-x-8 space-x-reverse">
@@ -253,9 +318,14 @@ function HomePage() {
                 </div>
                 <p className={themeClasses.textSecondary}>{t.painSection.statistics.dietFailure.description}</p>
                 <p className={`text-sm ${themeClasses.textMuted} mt-2`}>{t.painSection.statistics.dietFailure.source}</p>
-                <button className="text-emerald-500 hover:text-emerald-400 text-sm flex items-center justify-center mt-2">
+                <a 
+                  href="https://doi.org/10.1056/NEJMoa1800389" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-emerald-500 hover:text-emerald-400 text-sm flex items-center justify-center mt-2 transition-colors duration-300"
+                >
                   {t.painSection.statistics.dietFailure.link} ↗️
-                </button>
+                </a>
               </div>
               <div className="text-center">
                 <div className={`text-4xl font-bold ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'} mb-2`}>
@@ -263,9 +333,14 @@ function HomePage() {
                 </div>
                 <p className={themeClasses.textSecondary}>{t.painSection.statistics.motivationLoss.description}</p>
                 <p className={`text-sm ${themeClasses.textMuted} mt-2`}>{t.painSection.statistics.motivationLoss.source}</p>
-                <button className="text-emerald-500 hover:text-emerald-400 text-sm flex items-center justify-center mt-2">
+                <a 
+                  href="https://pubmed.ncbi.nlm.nih.gov/7707624/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-emerald-500 hover:text-emerald-400 text-sm flex items-center justify-center mt-2 transition-colors duration-300"
+                >
                   {t.painSection.statistics.motivationLoss.link} ↗️
-                </button>
+                </a>
               </div>
               <div className="text-center">
                 <div className={`text-4xl font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} mb-2`}>
@@ -273,9 +348,14 @@ function HomePage() {
                 </div>
                 <p className={themeClasses.textSecondary}>{t.painSection.statistics.noWorkoutTime.description}</p>
                 <p className={`text-sm ${themeClasses.textMuted} mt-2`}>{t.painSection.statistics.noWorkoutTime.source}</p>
-                <button className="text-emerald-500 hover:text-emerald-400 text-sm flex items-center justify-center mt-2">
+                <a 
+                  href="https://doi.org/10.1016/S1389-9457%2802%2900016-3" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-emerald-500 hover:text-emerald-400 text-sm flex items-center justify-center mt-2 transition-colors duration-300"
+                >
                   {t.painSection.statistics.noWorkoutTime.link} ↗️
-                </button>
+                </a>
               </div>
             </div>
           </div>
@@ -435,10 +515,18 @@ function HomePage() {
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-green-500 to-teal-600 rounded-xl p-8 text-white text-center">
+            <div className="bg-gradient-to-r from-green-500 to-teal-600 rounded-xl p-8 text-white text-center relative">
+              <div className="absolute top-4 right-4 bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-bold">
+                {language === 'hebrew' ? 'בפיתוח' : 'In Development'}
+              </div>
               <h4 className="text-3xl font-bold mb-4">{t.athletesSection.callToAction.title}</h4>
               <p className="text-xl mb-6">{t.athletesSection.callToAction.subtitle}</p>
-              <button className="bg-white text-green-600 px-8 py-4 rounded-full text-lg font-semibold hover:bg-gray-100 transition-colors duration-300 mb-4">
+              <button 
+                onClick={() => {
+                  alert(language === 'hebrew' ? 'תכנית הספורטאים נמצאת בפיתוח - בקרוב!' : 'Athlete Program is currently in development - coming soon!');
+                }}
+                className="bg-white text-green-600 px-8 py-4 rounded-full text-lg font-semibold hover:bg-gray-100 transition-colors duration-300 mb-4 opacity-75 cursor-not-allowed"
+              >
                 {t.athletesSection.callToAction.button}
               </button>
               <p className="text-sm opacity-80">{t.athletesSection.callToAction.details}</p>
@@ -481,170 +569,6 @@ function HomePage() {
           </div>
         </section>
 
-        {/* Science and Expertise Section */}
-        <section className={`py-20 ${themeClasses.bgSecondary}`}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h3 className={`text-4xl font-bold ${themeClasses.textPrimary} mb-4`}>
-                <span className="text-blue-400">{t.scienceSection.title}</span>
-                <br />
-                <span className="text-green-500">{t.scienceSection.subtitle}</span>
-              </h3>
-              <p className={`text-xl ${themeClasses.textSecondary} max-w-3xl mx-auto`}>
-                {t.scienceSection.description}
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-              <div className={`${themeClasses.bgCard} rounded-xl ${themeClasses.shadowCard} p-6 text-center`}>
-                <div className="text-4xl mb-4">📚</div>
-                <div className={`text-4xl font-bold ${themeClasses.textPrimary} mb-2`}>{t.scienceSection.metrics.scienceBased.percentage}</div>
-                <h4 className={`text-xl font-bold ${themeClasses.textPrimary} mb-2`}>{t.scienceSection.metrics.scienceBased.title}</h4>
-                <p className={`${themeClasses.textSecondary} text-sm mb-1`}>{t.scienceSection.metrics.scienceBased.description}</p>
-                <p className={`${themeClasses.textMuted} text-xs`}>{t.scienceSection.metrics.scienceBased.subDescription}</p>
-              </div>
-              
-              <div className={`${themeClasses.bgCard} rounded-xl ${themeClasses.shadowCard} p-6 text-center`}>
-                <div className="text-4xl mb-4">👥</div>
-                <div className={`text-4xl font-bold ${themeClasses.textPrimary} mb-2`}>{t.scienceSection.metrics.certifiedExperts.count}</div>
-                <h4 className={`text-xl font-bold ${themeClasses.textPrimary} mb-2`}>{t.scienceSection.metrics.certifiedExperts.title}</h4>
-                <p className={`${themeClasses.textSecondary} text-sm mb-1`}>{t.scienceSection.metrics.certifiedExperts.description}</p>
-                <p className={`${themeClasses.textMuted} text-xs`}>{t.scienceSection.metrics.certifiedExperts.subDescription}</p>
-              </div>
-              
-              <div className={`${themeClasses.bgCard} rounded-xl ${themeClasses.shadowCard} p-6 text-center`}>
-                <div className="text-4xl mb-4">🛡️</div>
-                <div className={`text-4xl font-bold ${themeClasses.textPrimary} mb-2`}>{t.scienceSection.metrics.provenResults.percentage}</div>
-                <h4 className={`text-xl font-bold ${themeClasses.textPrimary} mb-2`}>{t.scienceSection.metrics.provenResults.title}</h4>
-                <p className={`${themeClasses.textSecondary} text-sm mb-1`}>{t.scienceSection.metrics.provenResults.description}</p>
-                <p className={`${themeClasses.textMuted} text-xs`}>{t.scienceSection.metrics.provenResults.subDescription}</p>
-              </div>
-              
-              <div className={`${themeClasses.bgCard} rounded-xl ${themeClasses.shadowCard} p-6 text-center`}>
-                <div className="text-4xl mb-4">📈</div>
-                <div className={`text-4xl font-bold ${themeClasses.textPrimary} mb-2`}>{t.scienceSection.metrics.advancedTechnology.availability}</div>
-                <h4 className={`text-xl font-bold ${themeClasses.textPrimary} mb-2`}>{t.scienceSection.metrics.advancedTechnology.title}</h4>
-                <p className={`${themeClasses.textSecondary} text-sm mb-1`}>{t.scienceSection.metrics.advancedTechnology.description}</p>
-                <p className={`${themeClasses.textMuted} text-xs`}>{t.scienceSection.metrics.advancedTechnology.subDescription}</p>
-              </div>
-            </div>
-            
-            <div className="text-center mb-16">
-              <h4 className={`text-3xl font-bold text-green-500 mb-4`}>{t.scienceSection.team.title}</h4>
-              <p className={`text-xl ${themeClasses.textSecondary} mb-8`}>{t.scienceSection.team.subtitle}</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className={`${themeClasses.bgCard} rounded-xl ${themeClasses.shadowCard} p-6`}>
-                  <div className="flex items-center mb-4">
-                    <div className="w-16 h-16 mr-4 relative">
-                      <img 
-                        src="/gal.jpg" 
-                        alt="Gal Becker" 
-                        className="w-full h-full rounded-full object-cover shadow-lg border-4 border-blue-400/20"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
-                        }}
-                      />
-                      <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center absolute inset-0" style={{display: 'none'}}>
-                        <span className="text-white font-bold text-xl">G</span>
-                      </div>
-                    </div>
-                    <div>
-                      <h5 className={`text-xl font-bold ${themeClasses.textPrimary}`}>{t.scienceSection.team.members.gal.name}</h5>
-                      <p className={`text-green-500 font-semibold`}>{t.scienceSection.team.members.gal.title}</p>
-                    </div>
-                  </div>
-                  <p className={`${themeClasses.textSecondary} mb-4`}>{t.scienceSection.team.members.gal.description}</p>
-                  <div>
-                    <h6 className={`font-bold ${themeClasses.textPrimary}`}>{t.scienceSection.team.members.gal.experience}</h6>
-                    <p className={`${themeClasses.textSecondary} text-sm`}>{t.scienceSection.team.members.gal.experienceDetail}</p>
-                  </div>
-                </div>
-                
-                <div className={`${themeClasses.bgCard} rounded-xl ${themeClasses.shadowCard} p-6`}>
-                  <div className="flex items-center mb-4">
-                    <div className="w-16 h-16 mr-4 relative">
-                      <img 
-                        src="/yarden.png" 
-                        alt="Yarden Ovadia" 
-                        className="w-full h-full rounded-full object-cover shadow-lg border-4 border-blue-400/20"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
-                        }}
-                      />
-                      <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center absolute inset-0" style={{display: 'none'}}>
-                        <span className="text-white font-bold text-xl">Y</span>
-                      </div>
-                    </div>
-                    <div>
-                      <h5 className={`text-xl font-bold ${themeClasses.textPrimary}`}>{t.scienceSection.team.members.yarden.name}</h5>
-                      <p className={`text-green-500 font-semibold`}>{t.scienceSection.team.members.yarden.title}</p>
-                    </div>
-                  </div>
-                  <p className={`${themeClasses.textSecondary} mb-4`}>{t.scienceSection.team.members.yarden.description}</p>
-                  <div>
-                    <h6 className={`font-bold ${themeClasses.textPrimary}`}>{t.scienceSection.team.members.yarden.experience}</h6>
-                    <p className={`${themeClasses.textSecondary} text-sm`}>{t.scienceSection.team.members.yarden.experienceDetail}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div>
-                <h4 className={`text-2xl font-bold ${themeClasses.textPrimary} mb-6`}>{t.scienceSection.research.title}</h4>
-                <p className={`${themeClasses.textSecondary} mb-6`}>{t.scienceSection.research.subtitle}</p>
-                <div className="space-y-4">
-                  <div className={`${themeClasses.bgCard} rounded-lg p-4 ${themeClasses.shadowCard}`}>
-                    <div className="flex items-center mb-2">
-                      <div className="text-blue-500 text-xl mr-3">📚</div>
-                      <h5 className={`font-bold ${themeClasses.textPrimary}`}>{t.scienceSection.research.articles.aiOptimization.title}</h5>
-                    </div>
-                    <p className={`${themeClasses.textSecondary} text-sm mb-2`}>{t.scienceSection.research.articles.aiOptimization.description}</p>
-                    <button className="text-emerald-500 hover:text-emerald-400 text-sm flex items-center">
-                      {t.scienceSection.research.articles.aiOptimization.link} ↗️
-                    </button>
-                  </div>
-                  
-                  <div className={`${themeClasses.bgCard} rounded-lg p-4 ${themeClasses.shadowCard}`}>
-                    <div className="flex items-center mb-2">
-                      <div className="text-green-500 text-xl mr-3">📈</div>
-                      <h5 className={`font-bold ${themeClasses.textPrimary}`}>{t.scienceSection.research.articles.personalizedNutrition.title}</h5>
-                    </div>
-                    <p className={`${themeClasses.textSecondary} text-sm mb-2`}>{t.scienceSection.research.articles.personalizedNutrition.description}</p>
-                    <button className="text-emerald-500 hover:text-emerald-400 text-sm flex items-center">
-                      {t.scienceSection.research.articles.personalizedNutrition.link} ↗️
-                    </button>
-                  </div>
-                  
-                  <div className={`${themeClasses.bgCard} rounded-lg p-4 ${themeClasses.shadowCard}`}>
-                    <div className="flex items-center mb-2">
-                      <div className="text-orange-500 text-xl mr-3">🛡️</div>
-                      <h5 className={`font-bold ${themeClasses.textPrimary}`}>{t.scienceSection.research.articles.digitalTechnology.title}</h5>
-                    </div>
-                    <p className={`${themeClasses.textSecondary} text-sm mb-2`}>{t.scienceSection.research.articles.digitalTechnology.description}</p>
-                    <button className="text-emerald-500 hover:text-emerald-400 text-sm flex items-center">
-                      {t.scienceSection.research.articles.digitalTechnology.link} ↗️
-                    </button>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <h4 className={`text-2xl font-bold ${themeClasses.textPrimary} mb-6`}>{t.scienceSection.research.keyPoints.title}</h4>
-                <div className="space-y-3">
-                  {t.scienceSection.research.keyPoints.points.map((point, index) => (
-                    <div key={index} className="flex items-start">
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                      <p className={`${themeClasses.textSecondary}`}>{point}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* About Section */}
         <section className={`py-20 ${themeClasses.bgSecondary}`}>
@@ -1010,31 +934,6 @@ function HomePage() {
           </div>
         </section>
 
-        {/* Blog Section */}
-        <section className={`py-20 ${themeClasses.sectionBg}`}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h3 className={`text-4xl font-bold ${themeClasses.textPrimary} mb-4`}>{t.blog.title}</h3>
-              <p className={`text-xl ${themeClasses.textSecondary}`}>{t.blog.subtitle}</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {t.blog.posts.map((post, index) => (
-                <article key={index} className={`${themeClasses.bgCard} rounded-xl ${themeClasses.shadowCard} overflow-hidden ${themeClasses.shadowHover} transition-shadow duration-300`}>
-                  <div className="h-48 bg-gradient-to-br from-green-400 to-blue-500"></div>
-                  <div className="p-6">
-                    <div className={`text-sm ${themeClasses.textMuted} mb-2`}>{post.date}</div>
-                    <h4 className={`text-xl font-bold ${themeClasses.textPrimary} mb-3`}>{post.title}</h4>
-                    <p className={`${themeClasses.textSecondary} mb-4`}>{post.description}</p>
-                    <a href={post.link} className="text-emerald-600 font-semibold hover:text-emerald-800 transition-colors duration-300">
-                      {t.buttons.readMore}
-                    </a>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
 
         {/* Stats Section */}
         <section className="py-20 bg-gradient-to-r from-emerald-600 to-teal-600">
@@ -1069,38 +968,62 @@ function HomePage() {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className={`${themeClasses.bgCard} rounded-xl ${themeClasses.shadowCard} p-6 ${themeClasses.shadowHover} transition-shadow duration-300`}>
+              <div className={`${themeClasses.bgCard} rounded-xl ${themeClasses.shadowCard} p-6 ${themeClasses.shadowHover} transition-shadow duration-300 relative`}>
+                <div className="absolute top-4 right-4 bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                  {language === 'hebrew' ? 'בקרוב' : 'Soon'}
+                </div>
                 <div className="text-4xl mb-4">📚</div>
                 <h4 className={`text-xl font-bold ${themeClasses.textPrimary} mb-3`}>{t.learning.nutrition.title}</h4>
                 <p className={`${themeClasses.textSecondary} mb-4`}>{t.learning.nutrition.description}</p>
                 <div className="flex items-center justify-between">
                   <span className={`text-sm ${themeClasses.textMuted}`}>{t.learning.nutrition.lessons}</span>
-                  <button className={`${themeClasses.btnPrimary} text-white px-4 py-2 rounded-lg text-sm transition-colors duration-300`}>
-                    {t.buttons.startLesson}
+                  <button 
+                    onClick={() => {
+                      alert(language === 'hebrew' ? 'שיעורי התזונה יגיעו בקרוב!' : 'Nutrition lessons coming soon!');
+                    }}
+                    className="bg-gray-400 text-white px-4 py-2 rounded-lg text-sm transition-colors duration-300 opacity-75 cursor-not-allowed"
+                  >
+                    {language === 'hebrew' ? 'בקרוב' : 'Coming Soon'}
                   </button>
                 </div>
               </div>
               
-              <div className={`${themeClasses.bgCard} rounded-xl ${themeClasses.shadowCard} p-6 ${themeClasses.shadowHover} transition-shadow duration-300`}>
+              <div className={`${themeClasses.bgCard} rounded-xl ${themeClasses.shadowCard} p-6 ${themeClasses.shadowHover} transition-shadow duration-300 relative`}>
+                <div className="absolute top-4 right-4 bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                  {language === 'hebrew' ? 'בקרוב' : 'Soon'}
+                </div>
                 <div className="text-4xl mb-4">🏃‍♀️</div>
                 <h4 className={`text-xl font-bold ${themeClasses.textPrimary} mb-3`}>{t.learning.fitness.title}</h4>
                 <p className={`${themeClasses.textSecondary} mb-4`}>{t.learning.fitness.description}</p>
                 <div className="flex items-center justify-between">
                   <span className={`text-sm ${themeClasses.textMuted}`}>{t.learning.fitness.lessons}</span>
-                  <button className={`${themeClasses.btnPrimary} text-white px-4 py-2 rounded-lg text-sm transition-colors duration-300`}>
-                    {t.buttons.startLesson}
+                  <button 
+                    onClick={() => {
+                      alert(language === 'hebrew' ? 'שיעורי הכושר יגיעו בקרוב!' : 'Fitness lessons coming soon!');
+                    }}
+                    className="bg-gray-400 text-white px-4 py-2 rounded-lg text-sm transition-colors duration-300 opacity-75 cursor-not-allowed"
+                  >
+                    {language === 'hebrew' ? 'בקרוב' : 'Coming Soon'}
                   </button>
                 </div>
               </div>
               
-              <div className={`${themeClasses.bgCard} rounded-xl ${themeClasses.shadowCard} p-6 ${themeClasses.shadowHover} transition-shadow duration-300`}>
+              <div className={`${themeClasses.bgCard} rounded-xl ${themeClasses.shadowCard} p-6 ${themeClasses.shadowHover} transition-shadow duration-300 relative`}>
+                <div className="absolute top-4 right-4 bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                  {language === 'hebrew' ? 'בקרוב' : 'Soon'}
+                </div>
                 <div className="text-4xl mb-4">🧠</div>
                 <h4 className={`text-xl font-bold ${themeClasses.textPrimary} mb-3`}>{t.learning.mental.title}</h4>
                 <p className={`${themeClasses.textSecondary} mb-4`}>{t.learning.mental.description}</p>
                 <div className="flex items-center justify-between">
                   <span className={`text-sm ${themeClasses.textMuted}`}>{t.learning.mental.lessons}</span>
-                  <button className={`${themeClasses.btnPrimary} text-white px-4 py-2 rounded-lg text-sm transition-colors duration-300`}>
-                    {t.buttons.startLesson}
+                  <button 
+                    onClick={() => {
+                      alert(language === 'hebrew' ? 'שיעורי הבריאות הנפשית יגיעו בקרוב!' : 'Mental health lessons coming soon!');
+                    }}
+                    className="bg-gray-400 text-white px-4 py-2 rounded-lg text-sm transition-colors duration-300 opacity-75 cursor-not-allowed"
+                  >
+                    {language === 'hebrew' ? 'בקרוב' : 'Coming Soon'}
                   </button>
                 </div>
               </div>
@@ -1298,8 +1221,17 @@ function HomePage() {
                     <p className={themeClasses.textSecondary}>"{t.messages.recentMessages.alon.message}"</p>
                   </div>
                 </div>
-                <button className={`w-full mt-6 ${themeClasses.btnPrimary} text-white py-3 rounded-lg font-semibold transition-colors duration-300`}>
-                  {t.buttons.sendNewMessage}
+                <button 
+                  onClick={() => {
+                    alert(language === 'hebrew' ? 
+                      'לשליחת הודעה, אנא פנה לבוט שלנו בווטסאפ!' : 
+                      'To send a message, please contact our WhatsApp bot!'
+                    );
+                  }}
+                  className={`w-full mt-6 bg-gradient-to-r from-green-500 to-teal-600 text-white py-3 rounded-lg font-semibold transition-colors duration-300 hover:from-green-600 hover:to-teal-700 flex items-center justify-center`}
+                >
+                  <span className="mr-2">📱</span>
+                  {language === 'hebrew' ? 'שלח הודעה בווטסאפ' : 'Send Message via WhatsApp'}
                 </button>
               </div>
             </div>
@@ -1386,8 +1318,16 @@ function HomePage() {
             </div>
             
             <div className="text-center mt-12">
-              <button className={`${isDarkMode ? 'bg-gradient-to-r from-yellow-600 to-orange-600' : 'bg-gradient-to-r from-yellow-400 to-orange-500'} text-white px-8 py-4 rounded-full text-lg font-semibold hover:from-yellow-500 hover:to-orange-600 transition-all duration-300 shadow-lg`}>
-                {t.buttons.shareAchievement}
+              <button 
+                onClick={() => {
+                  alert(language === 'hebrew' ? 'תכונת שיתוף ההישגים תגיע בקרוב!' : 'Achievement sharing feature coming soon!');
+                }}
+                className={`bg-gray-400 text-white px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 shadow-lg opacity-75 cursor-not-allowed relative`}
+              >
+                <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                  {language === 'hebrew' ? 'בקרוב' : 'Soon'}
+                </span>
+                {language === 'hebrew' ? 'שיתוף הישגים - בקרוב' : 'Share Achievement - Coming Soon'}
               </button>
             </div>
           </div>
@@ -1563,25 +1503,59 @@ function HomePage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               <div>
                 <h4 className={`text-2xl font-bold ${themeClasses.textPrimary} mb-6`}>{t.contact.form.title}</h4>
-                <form className="space-y-6">
+                <form className="space-y-6" onSubmit={handleContactSubmit}>
                   <div>
                     <label className={`block text-sm font-medium ${themeClasses.textPrimary} mb-2`}>{t.contact.form.fullName}</label>
-                    <input type="text" className={`w-full px-4 py-3 ${themeClasses.bgCard} ${themeClasses.borderPrimary} border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${themeClasses.textPrimary}`} />
+                    <input 
+                      type="text" 
+                      name="fullName"
+                      value={contactForm.fullName}
+                      onChange={handleContactChange}
+                      required
+                      className={`w-full px-4 py-3 ${themeClasses.bgCard} ${themeClasses.borderPrimary} border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${themeClasses.textPrimary}`} 
+                    />
                   </div>
                   <div>
                     <label className={`block text-sm font-medium ${themeClasses.textPrimary} mb-2`}>{t.contact.form.email}</label>
-                    <input type="email" className={`w-full px-4 py-3 ${themeClasses.bgCard} ${themeClasses.borderPrimary} border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${themeClasses.textPrimary}`} />
+                    <input 
+                      type="email" 
+                      name="email"
+                      value={contactForm.email}
+                      onChange={handleContactChange}
+                      required
+                      className={`w-full px-4 py-3 ${themeClasses.bgCard} ${themeClasses.borderPrimary} border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${themeClasses.textPrimary}`} 
+                    />
                   </div>
                   <div>
                     <label className={`block text-sm font-medium ${themeClasses.textPrimary} mb-2`}>{t.contact.form.phone}</label>
-                    <input type="tel" className={`w-full px-4 py-3 ${themeClasses.bgCard} ${themeClasses.borderPrimary} border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${themeClasses.textPrimary}`} />
+                    <input 
+                      type="tel" 
+                      name="phone"
+                      value={contactForm.phone}
+                      onChange={handleContactChange}
+                      className={`w-full px-4 py-3 ${themeClasses.bgCard} ${themeClasses.borderPrimary} border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${themeClasses.textPrimary}`} 
+                    />
                   </div>
                   <div>
                     <label className={`block text-sm font-medium ${themeClasses.textPrimary} mb-2`}>{t.contact.form.message}</label>
-                    <textarea rows="4" className={`w-full px-4 py-3 ${themeClasses.bgCard} ${themeClasses.borderPrimary} border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${themeClasses.textPrimary}`}></textarea>
+                    <textarea 
+                      rows="4" 
+                      name="message"
+                      value={contactForm.message}
+                      onChange={handleContactChange}
+                      required
+                      className={`w-full px-4 py-3 ${themeClasses.bgCard} ${themeClasses.borderPrimary} border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${themeClasses.textPrimary}`}
+                    ></textarea>
                   </div>
-                  <button type="submit" className={`w-full ${themeClasses.btnPrimary} text-white py-3 rounded-lg font-semibold transition-all duration-300`}>
-                    {t.buttons.sendMessage}
+                  <button 
+                    type="submit" 
+                    disabled={isSubmittingContact}
+                    className={`w-full ${isSubmittingContact ? 'bg-gray-400 cursor-not-allowed' : themeClasses.btnPrimary} text-white py-3 rounded-lg font-semibold transition-all duration-300`}
+                  >
+                    {isSubmittingContact ? 
+                      (language === 'hebrew' ? 'שולח...' : 'Sending...') : 
+                      t.buttons.sendMessage
+                    }
                   </button>
                 </form>
               </div>
@@ -1591,49 +1565,57 @@ function HomePage() {
                   <h5 className={`text-xl font-bold ${themeClasses.textPrimary} mb-4`}>{t.contact.details.title}</h5>
                   <div className="space-y-4">
                     <div className="flex items-center">
-                      <div className={`w-10 h-10 ${isDarkMode ? 'bg-gray-700' : 'bg-indigo-100'} rounded-full flex items-center justify-center mr-4`}>
-                        📞
+                      <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-4">
+                        <span className="text-white text-lg">📞</span>
                       </div>
                       <div>
                         <div className={`font-semibold ${themeClasses.textPrimary}`}>{t.contact.details.phone}</div>
-                        <div className={themeClasses.textSecondary}>03-1234567</div>
+                        <div className={themeClasses.textSecondary}>050-2420905</div>
+                        <div className={`${themeClasses.textMuted} text-sm`}>{language === 'hebrew' ? 'זמינים א-ה 8:00-18:00' : 'Available Sun-Thu 8:00-18:00'}</div>
                       </div>
                     </div>
                     <div className="flex items-center">
-                      <div className={`w-10 h-10 ${isDarkMode ? 'bg-gray-700' : 'bg-indigo-100'} rounded-full flex items-center justify-center mr-4`}>
-                        ✉️
+                      <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-4">
+                        <span className="text-white text-lg">✉️</span>
                       </div>
                       <div>
                         <div className={`font-semibold ${themeClasses.textPrimary}`}>{t.contact.details.email}</div>
                         <div className={themeClasses.textSecondary}>info@betterchoice.co.il</div>
+                        <div className={`${themeClasses.textMuted} text-sm`}>{language === 'hebrew' ? 'מענה תוך 24 שעות' : 'Response within 24 hours'}</div>
                       </div>
                     </div>
                     <div className="flex items-center">
-                      <div className={`w-10 h-10 ${isDarkMode ? 'bg-gray-700' : 'bg-indigo-100'} rounded-full flex items-center justify-center mr-4`}>
-                        📍
+                      <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-4">
+                        <span className="text-white text-lg">📍</span>
                       </div>
                       <div>
                         <div className={`font-semibold ${themeClasses.textPrimary}`}>{t.contact.details.address}</div>
-                        <div className={themeClasses.textSecondary}>{t.contact.details.addressValue}</div>
+                        <div className={themeClasses.textSecondary}>{language === 'hebrew' ? 'משכית 10, הרצליה, ישראל' : 'Maskit 10, Herzliya, Israel'}</div>
+                        <div className={`${themeClasses.textMuted} text-sm`}>{language === 'hebrew' ? 'ביקור לפי תיאום מראש' : 'Visit by appointment only'}</div>
                       </div>
                     </div>
                   </div>
                 </div>
                 
-                <div className={`${isDarkMode ? 'bg-gradient-to-br from-gray-700 to-gray-800' : 'bg-gradient-to-br from-indigo-50 to-purple-50'} rounded-xl p-6`}>
-                  <h5 className={`text-xl font-bold ${themeClasses.textPrimary} mb-4`}>{t.contact.hours.title}</h5>
+                <div className={`${themeClasses.bgCard} rounded-xl p-6`}>
+                  <div className="flex items-center mb-4">
+                    <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-4">
+                      <span className="text-white text-lg">🕒</span>
+                    </div>
+                    <h5 className={`text-xl font-bold ${themeClasses.textPrimary}`}>{t.contact.hours.title}</h5>
+                  </div>
                   <div className={`space-y-2 ${themeClasses.textSecondary}`}>
                     <div className="flex justify-between">
-                      <span>{t.contact.hours.weekdays}</span>
-                      <span>{t.contact.hours.weekdaysHours}</span>
+                      <span>{language === 'hebrew' ? 'א-ה' : 'Sun-Thu'}</span>
+                      <span>{language === 'hebrew' ? '8:00-18:00' : '8:00-18:00'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>{t.contact.hours.friday}</span>
-                      <span>{t.contact.hours.fridayHours}</span>
+                      <span>{language === 'hebrew' ? 'ו' : 'Fri'}</span>
+                      <span>{language === 'hebrew' ? '8:00-14:00' : '8:00-14:00'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>{t.contact.hours.saturday}</span>
-                      <span>{t.contact.hours.saturdayHours}</span>
+                      <span>{language === 'hebrew' ? 'ש' : 'Sat'}</span>
+                      <span>{language === 'hebrew' ? 'סגור' : 'Closed'}</span>
                     </div>
                   </div>
                 </div>

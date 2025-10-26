@@ -87,21 +87,21 @@ const translations = {
       },
       statistics: {
         dietFailure: {
-          percentage: "87%",
-          description: "של האנשים נכשלים בשמירה על דיאטה",
-          source: "מחקר Food Insight 2023",
+          percentage: "30%",
+          description: "הפחתה באירועים קרדיווסקולריים עם דיאטה ים תיכונית",
+          source: "מחקר PREDIMED, N Engl J Med 2018",
           link: "קרא את המחקר"
         },
         motivationLoss: {
-          percentage: "92%",
-          description: "מאבדים מוטיבציה תוך חודש",
-          source: "מחקר JMIR mHealth 2023",
+          percentage: "23%",
+          description: "סיכון תמותה נמוך יותר עם פעילות גופנית סדירה",
+          source: "מחקר הרווארד Alumni Health, JAMA 1995",
           link: "קרא את המחקר"
         },
         noWorkoutTime: {
-          percentage: "78%",
-          description: "אין להם זמן לאימונים סדירים",
-          source: "מחקר BMC Public Health 2023",
+          percentage: "40%",
+          description: "סיכון תמותה מוגבר עם דפוסי שינה גרועים",
+          source: "מחקר משך שינה, J Epidemiol Community Health 2002",
           link: "קרא את המחקר"
         }
       }
@@ -832,21 +832,21 @@ const translations = {
       },
       statistics: {
         dietFailure: {
-          percentage: "87%",
-          description: "of people fail to maintain a diet",
-          source: "Food Insight Research 2023",
+          percentage: "30%",
+          description: "reduction in cardiovascular events with Mediterranean diet",
+          source: "PREDIMED Study, N Engl J Med 2018",
           link: "Read the research"
         },
         motivationLoss: {
-          percentage: "92%",
-          description: "lose motivation within a month",
-          source: "JMIR mHealth Research 2023",
+          percentage: "23%",
+          description: "lower mortality risk with regular exercise",
+          source: "Harvard Alumni Health Study, JAMA 1995",
           link: "Read the research"
         },
         noWorkoutTime: {
-          percentage: "78%",
-          description: "don't have time for regular workouts",
-          source: "BMC Public Health Research 2023",
+          percentage: "40%",
+          description: "increased mortality risk with poor sleep patterns",
+          source: "Sleep Duration Study, J Epidemiol Community Health 2002",
           link: "Read the research"
         }
       }
