@@ -1871,6 +1871,20 @@ const PricingTab = ({ themeClasses, user, language }) => {
 
   const [subscriptionsLastFetched, setSubscriptionsLastFetched] = useState(null);
 
+  const fetchUserSubscriptions = async () => {
+    try {
+      setLoadingSubscriptions(true);
+      const subscriptions = await getCustomerSubscriptions(user.id);
+      setUserSubscriptions(subscriptions || []);
+      setSubscriptionsLastFetched(Date.now()); // Set timestamp when data is fetched
+    } catch (error) {
+      console.error('Error fetching subscriptions:', error);
+      setUserSubscriptions([]);
+    } finally {
+      setLoadingSubscriptions(false);
+    }
+  };
+
   // Fetch user's current subscriptions
   useEffect(() => {
     const shouldFetch = user?.id && 
