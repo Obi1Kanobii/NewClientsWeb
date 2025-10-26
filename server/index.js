@@ -15,27 +15,9 @@ console.log('Supabase connection:', process.env.REACT_APP_SUPABASE_URL ? 'Config
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
-const allowedOrigins = process.env.NODE_ENV === 'production' 
-  ? [
-      'https://betterchoicelive.netlify.app',
-      'https://betterchoicelive.com', // Add your custom domain if you have one
-      'https://www.betterchoicelive.com' // Add www version if needed
-    ]
-  : ['http://localhost:3000'];
-
+// Middleware - Temporary permissive CORS for debugging
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true, // Allow all origins temporarily for debugging
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
