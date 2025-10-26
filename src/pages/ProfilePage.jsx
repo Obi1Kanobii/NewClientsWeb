@@ -1869,24 +1869,24 @@ const PricingTab = ({ themeClasses, user, language }) => {
   const contentProducts = getProductsByCategory('content');
   const consultationProducts = getProductsByCategory('consultation');
 
+  const [subscriptionsLastFetched, setSubscriptionsLastFetched] = useState(null);
+
   // Fetch user's current subscriptions
   useEffect(() => {
-    if (user?.id) {
+    const shouldFetch = user?.id && 
+                       userSubscriptions.length === 0 && 
+                       !loadingSubscriptions &&
+                       (!subscriptionsLastFetched || Date.now() - subscriptionsLastFetched > 300000); // 5 minutes cache
+    
+    if (shouldFetch) {
       fetchUserSubscriptions();
     }
-  }, [user]);
+  }, [user, userSubscriptions.length, loadingSubscriptions, subscriptionsLastFetched]);
 
-  const fetchUserSubscriptions = async () => {
-    try {
-      setLoadingSubscriptions(true);
-      const subscriptions = await getCustomerSubscriptions(user.id);
-      setUserSubscriptions(subscriptions || []);
-    } catch (error) {
-      console.error('Error fetching subscriptions:', error);
-      setUserSubscriptions([]);
-    } finally {
-      setLoadingSubscriptions(false);
-    }
+  // Manual refresh function for subscriptions (call after successful purchase)
+  const refreshSubscriptions = async () => {
+    setSubscriptionsLastFetched(null); // Reset timestamp to force refresh
+    await fetchUserSubscriptions();
   };
 
   const hasActiveSubscription = (productId) => {
