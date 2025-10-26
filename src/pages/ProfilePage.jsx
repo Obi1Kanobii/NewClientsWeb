@@ -38,14 +38,17 @@ const ProfilePage = () => {
 
   // Load profile data on component mount
   useEffect(() => {
-    if (user) {
+    if (user && !profileData.userCode) { // Only load if user exists and profile not already loaded
       loadProfileData();
     }
-  }, [user]);
+  }, [user, profileData.userCode]);
 
   const loadProfileData = async () => {
     try {
-      console.log('Loading profile data for user:', user.id);
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Loading profile data for user:', user.id);
+      }
       
       const { data, error } = await supabase
         .from('clients')
@@ -64,7 +67,9 @@ const ProfilePage = () => {
       }
 
       if (data) {
-        console.log('Profile data loaded:', data);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Profile data loaded:', data);
+        }
         setProfileData({
           firstName: data.first_name || '',
           lastName: data.last_name || '',
@@ -84,7 +89,9 @@ const ProfilePage = () => {
           timezone: data.timezone || ''
         });
       } else {
-        console.log('No profile data found, initializing with user metadata');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('No profile data found, initializing with user metadata');
+        }
         // Initialize with user metadata if available
         setProfileData(prev => ({
           ...prev,
