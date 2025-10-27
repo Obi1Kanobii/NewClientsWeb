@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient'
+import { supabase, supabaseSecondary } from './supabaseClient'
 
 // Sign up with email and password
 export const signUp = async (email, password, userData = {}) => {
@@ -118,7 +118,7 @@ export const generateUniqueUserCode = async () => {
     // Check if this code already exists in the database
     try {
       const { data, error } = await supabase
-        .from('clients')
+        .from('user_profiles')
         .select('user_code')
         .eq('user_code', userCode)
         .single();
@@ -147,7 +147,7 @@ export const generateUniqueUserCode = async () => {
   throw new Error('Failed to generate unique user code after maximum attempts');
 };
 
-// Create client record in clients table
+// Create client record in user_profiles table and chat_users table
 export const createClientRecord = async (userId, userData) => {
   try {
     console.log('Creating client record for user:', userId, 'with data:', userData);
@@ -163,17 +163,16 @@ export const createClientRecord = async (userId, userData) => {
       console.warn('Service role key not found, using regular client');
       // Fallback to regular client
       const { data, error } = await supabase
-        .from('clients')
+        .from('user_profiles')
         .insert([
           {
             user_id: userId,
-            first_name: userData.first_name,
-            last_name: userData.last_name,
+            full_name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
             email: userData.email,
             phone: userData.phone,
-            newsletter: userData.newsletter,
-            status: 'active',
-            user_code: userCode
+            user_code: userCode,
+            role: 'client',
+            activated: true
           }
         ])
         .select()
@@ -183,6 +182,39 @@ export const createClientRecord = async (userId, userData) => {
       if (error) {
         console.error('Client record creation error:', error);
         throw error;
+      }
+      
+      // Also create record in chat_users table (secondary database)
+      if (supabaseSecondary && data && data[0]) {
+        try {
+          console.log('Creating chat_users record for user_code:', userCode);
+          const chatUserData = {
+            user_code: userCode,
+            full_name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
+            email: userData.email,
+            phone_number: userData.phone,
+            platform: 'web',
+            activated: false,
+            is_verified: false,
+            language: 'en',
+            created_at: new Date().toISOString()
+          };
+
+          const { data: chatUserDataResult, error: chatUserError } = await supabaseSecondary
+            .from('chat_users')
+            .insert([chatUserData])
+            .select();
+
+          if (chatUserError) {
+            console.error('Error creating chat_users record:', chatUserError);
+            // Don't throw - continue even if chat_users creation fails
+          } else {
+            console.log('Chat user created successfully:', chatUserDataResult);
+          }
+        } catch (chatError) {
+          console.error('Unexpected error creating chat_users record:', chatError);
+          // Don't throw - continue even if chat_users creation fails
+        }
       }
       
       return { data, error: null }
@@ -196,17 +228,16 @@ export const createClientRecord = async (userId, userData) => {
     );
 
     const { data, error } = await supabaseAdmin
-      .from('clients')
+      .from('user_profiles')
       .insert([
         {
           user_id: userId,
-          first_name: userData.first_name,
-          last_name: userData.last_name,
+          full_name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
           email: userData.email,
           phone: userData.phone,
-          newsletter: userData.newsletter,
-          status: 'active',
-          user_code: userCode
+          user_code: userCode,
+          role: 'client',
+          activated: true
         }
       ])
       .select()
@@ -216,6 +247,39 @@ export const createClientRecord = async (userId, userData) => {
     if (error) {
       console.error('Client record creation error:', error);
       throw error;
+    }
+    
+    // Also create record in chat_users table (secondary database)
+    if (supabaseSecondary && data && data[0]) {
+      try {
+        console.log('Creating chat_users record for user_code:', userCode);
+        const chatUserData = {
+          user_code: userCode,
+          full_name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
+          email: userData.email,
+          phone_number: userData.phone,
+          platform: 'web',
+          activated: false,
+          is_verified: false,
+          language: 'en',
+          created_at: new Date().toISOString()
+        };
+
+        const { data: chatUserDataResult, error: chatUserError } = await supabaseSecondary
+          .from('chat_users')
+          .insert([chatUserData])
+          .select();
+
+        if (chatUserError) {
+          console.error('Error creating chat_users record:', chatUserError);
+          // Don't throw - continue even if chat_users creation fails
+        } else {
+          console.log('Chat user created successfully:', chatUserDataResult);
+        }
+      } catch (chatError) {
+        console.error('Unexpected error creating chat_users record:', chatError);
+        // Don't throw - continue even if chat_users creation fails
+      }
     }
     
     return { data, error: null }
@@ -229,7 +293,7 @@ export const createClientRecord = async (userId, userData) => {
 export const getClientRecord = async (userId) => {
   try {
     const { data, error } = await supabase
-      .from('clients')
+      .from('user_profiles')
       .select('*')
       .eq('user_id', userId)
       .single()
@@ -242,16 +306,60 @@ export const getClientRecord = async (userId) => {
   }
 }
 
-// Update client record
+// Update client record in user_profiles and optionally sync to chat_users
 export const updateClientRecord = async (userId, updates) => {
   try {
     const { data, error } = await supabase
-      .from('clients')
+      .from('user_profiles')
       .update(updates)
       .eq('user_id', userId)
       .select()
 
     if (error) throw error
+    
+    // If secondary DB is available and we have user_code, also update chat_users
+    if (supabaseSecondary && data && data[0] && data[0].user_code) {
+      try {
+        // Get the chat_users id using user_code
+        const { data: chatUser, error: chatUserError } = await supabaseSecondary
+          .from('chat_users')
+          .select('id')
+          .eq('user_code', data[0].user_code)
+          .single();
+
+        if (!chatUserError && chatUser) {
+          // Map updates to chat_users fields
+          const chatUpdates = {};
+          
+          // Map fields that exist in both tables
+          if (updates.full_name) chatUpdates.full_name = updates.full_name;
+          if (updates.email) chatUpdates.email = updates.email;
+          if (updates.phone) chatUpdates.phone_number = updates.phone;
+          if (updates.region) chatUpdates.region = updates.region;
+          if (updates.city) chatUpdates.city = updates.city;
+          if (updates.timezone) chatUpdates.timezone = updates.timezone;
+          if (updates.age) chatUpdates.age = updates.age;
+          if (updates.gender) chatUpdates.gender = updates.gender;
+          if (updates.birth_date) chatUpdates.date_of_birth = updates.birth_date;
+          if (updates.food_allergies) chatUpdates.food_allergies = updates.food_allergies;
+          if (updates.updated_at) chatUpdates.updated_at = updates.updated_at;
+
+          // Only update if there are fields to update
+          if (Object.keys(chatUpdates).length > 0) {
+            await supabaseSecondary
+              .from('chat_users')
+              .update(chatUpdates)
+              .eq('id', chatUser.id);
+            
+            console.log('Chat user synced successfully');
+          }
+        }
+      } catch (syncError) {
+        console.error('Error syncing to chat_users:', syncError);
+        // Don't throw - continue even if sync fails
+      }
+    }
+    
     return { data, error: null }
   } catch (error) {
     console.error('Update client record error:', error)

@@ -4,7 +4,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import Navigation from '../components/Navigation';
-import { supabase } from '../supabase/supabaseClient';
+import { supabase, supabaseSecondary } from '../supabase/supabaseClient';
 
 function HomePage() {
   const { language, direction, toggleLanguage, t } = useLanguage();
@@ -44,43 +44,6 @@ function HomePage() {
     }
   };
 
-  const checkProfileCompletion = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from('clients')
-        .select('birth_date, age, gender, region, city, timezone, dietary_preferences, food_allergies, medical_conditions')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error checking profile completion:', error);
-        return;
-      }
-
-      // Check if any required fields are missing
-      const isIncomplete = !data || 
-        !data.birth_date || 
-        !data.age || 
-        !data.gender || 
-        !data.region || 
-        !data.city || 
-        !data.timezone ||
-        !data.dietary_preferences ||
-        !data.food_allergies ||
-        !data.medical_conditions;
-
-      setIsProfileIncomplete(isIncomplete);
-    } catch (error) {
-      console.error('Error checking profile completion:', error);
-    }
-  }, [user]);
-
-  // Check if profile is incomplete
-  useEffect(() => {
-    if (user && isAuthenticated) {
-      checkProfileCompletion();
-    }
-  }, [user, isAuthenticated, checkProfileCompletion]);
 
   // Contact form handlers
   const handleContactChange = (e) => {
@@ -1649,6 +1612,7 @@ function HomePage() {
           </div>
         </div>
       </footer>
+
     </div>
   );
 }

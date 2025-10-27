@@ -194,6 +194,17 @@ code {
   }
 }
 
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 /* Animation Classes */
 .animate-fadeIn {
   animation: fadeIn 0.6s ease-out;
@@ -221,6 +232,10 @@ code {
 
 .animate-bounce {
   animation: bounce 1s infinite;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.3s ease-out;
 }
 
 /* Smooth transitions for all interactive elements */

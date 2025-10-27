@@ -4,10 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { useStripe } from '../context/StripeContext';
-import { supabase } from '../supabase/supabaseClient';
+import { supabase, supabaseSecondary } from '../supabase/supabaseClient';
 import { getMealPlan, debugMealPlans, getFoodLogs, createFoodLog, updateFoodLog, deleteFoodLog, getChatMessages, createChatMessage } from '../supabase/secondaryClient';
 import { getAllProducts, getProductsByCategory, getProduct } from '../config/stripe-products';
 import PricingCard from '../components/PricingCard';
+import OnboardingModal from '../components/OnboardingModal';
 
 const ProfilePage = () => {
   const { user, isAuthenticated } = useAuth();
@@ -35,11 +36,69 @@ const ProfilePage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [userCode, setUserCode] = useState(null);
+
+  // Check onboarding status
+  const checkOnboardingStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('user_code, phone, user_language, city, birth_date, age, gender, current_weight, target_weight, height, food_allergies, food_limitations, Activity_level, goal, client_preference, region, medical_conditions')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking onboarding status:', error);
+        return;
+      }
+
+      if (data) {
+        setUserCode(data.user_code);
+        
+        // Check if onboarding is needed (missing critical fields)
+        const needsOnboarding = !data.phone || 
+          !data.user_language || 
+          !data.city || 
+          !data.birth_date || 
+          !data.age || 
+          !data.gender || 
+          !data.current_weight || 
+          !data.target_weight ||
+          !data.height ||
+          !data.food_allergies ||
+          !data.food_limitations ||
+          !data.Activity_level ||
+          !data.goal ||
+          !data.client_preference ||
+          !data.region ||
+          !data.medical_conditions;
+
+        if (needsOnboarding) {
+          setShowOnboarding(true);
+        }
+      } else {
+        // No profile data at all - show onboarding
+        setShowOnboarding(true);
+      }
+    } catch (error) {
+      console.error('Error checking onboarding status:', error);
+    }
+  };
+
+  // Callback to handle onboarding completion
+  const handleOnboardingComplete = async () => {
+    // Reload profile data
+    await loadProfileData();
+    // Close the modal
+    setShowOnboarding(false);
+  };
 
   // Load profile data on component mount
   useEffect(() => {
     if (user && !profileData.userCode) { // Only load if user exists and profile not already loaded
       loadProfileData();
+      checkOnboardingStatus();
     }
   }, [user, profileData.userCode]);
 
@@ -51,7 +110,7 @@ const ProfilePage = () => {
       }
       
       const { data, error } = await supabase
-        .from('clients')
+        .from('user_profiles')
         .select('*')
         .eq('user_id', user.id)
         .single();
@@ -70,13 +129,18 @@ const ProfilePage = () => {
         if (process.env.NODE_ENV === 'development') {
           console.log('Profile data loaded:', data);
         }
+        // Split full_name into firstName and lastName
+        const nameParts = (data.full_name || '').split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+        
         setProfileData({
-          firstName: data.first_name || '',
-          lastName: data.last_name || '',
+          firstName: firstName,
+          lastName: lastName,
           email: data.email || user.email || '',
           phone: data.phone || '',
-          newsletter: data.newsletter || false,
-          status: data.status || 'active',
+          newsletter: false,
+          status: 'active',
           birthDate: data.birth_date || '',
           age: data.age ? data.age.toString() : '',
           gender: data.gender || '',
@@ -142,15 +206,13 @@ const ProfilePage = () => {
         finalAge = calculateAge(profileData.birthDate);
       }
 
-      // Prepare the data object
+      // Prepare the data object - combine first_name and last_name into full_name
+      const fullName = `${profileData.firstName.trim()} ${profileData.lastName.trim()}`.trim();
       const dataToSave = {
         user_id: user.id,
-        first_name: profileData.firstName.trim(),
-        last_name: profileData.lastName.trim(),
+        full_name: fullName,
         email: profileData.email.trim(),
         phone: profileData.phone?.trim() || null,
-        newsletter: profileData.newsletter,
-        status: profileData.status,
         birth_date: profileData.birthDate || null,
         age: finalAge,
         gender: profileData.gender || null,
@@ -168,7 +230,7 @@ const ProfilePage = () => {
 
       // First, check if a record exists for this user
       const { data: existingData, error: checkError } = await supabase
-        .from('clients')
+        .from('user_profiles')
         .select('id')
         .eq('user_id', user.id)
         .single();
@@ -177,20 +239,17 @@ const ProfilePage = () => {
       if (checkError && checkError.code === 'PGRST116') {
         // No existing record, insert new one
         result = await supabase
-          .from('clients')
+          .from('user_profiles')
           .insert(dataToSave)
           .select();
       } else if (existingData) {
         // Record exists, update it
         result = await supabase
-          .from('clients')
+          .from('user_profiles')
           .update({
-            first_name: dataToSave.first_name,
-            last_name: dataToSave.last_name,
+            full_name: dataToSave.full_name,
             email: dataToSave.email,
             phone: dataToSave.phone,
-            newsletter: dataToSave.newsletter,
-            status: dataToSave.status,
             birth_date: dataToSave.birth_date,
             age: dataToSave.age,
             gender: dataToSave.gender,
@@ -238,6 +297,47 @@ const ProfilePage = () => {
         console.log('Profile saved successfully:', data);
         setSaveStatus('success');
         setTimeout(() => setSaveStatus(''), 3000);
+        
+        // Sync to chat_users table (secondary database)
+        if (supabaseSecondary && data && data[0] && profileData.userCode) {
+          try {
+            console.log('Syncing profile to chat_users for user_code:', profileData.userCode);
+            
+            // Get the chat_users id using user_code
+            const { data: chatUser, error: chatUserError } = await supabaseSecondary
+              .from('chat_users')
+              .select('id')
+              .eq('user_code', profileData.userCode)
+              .single();
+
+            if (!chatUserError && chatUser) {
+              // Map profile data to chat_users fields
+              const chatUpdates = {
+                full_name: dataToSave.full_name,
+                email: dataToSave.email,
+                phone_number: dataToSave.phone,
+                region: dataToSave.region,
+                city: dataToSave.city,
+                timezone: dataToSave.timezone,
+                age: dataToSave.age,
+                gender: dataToSave.gender,
+                date_of_birth: dataToSave.birth_date,
+                food_allergies: dataToSave.food_allergies,
+                updated_at: dataToSave.updated_at
+              };
+
+              await supabaseSecondary
+                .from('chat_users')
+                .update(chatUpdates)
+                .eq('id', chatUser.id);
+              
+              console.log('Chat user synced successfully');
+            }
+          } catch (syncError) {
+            console.error('Error syncing to chat_users:', syncError);
+            // Don't throw - continue even if sync fails
+          }
+        }
       }
     } catch (error) {
       console.error('Unexpected error saving profile:', error);
@@ -473,6 +573,14 @@ const ProfilePage = () => {
             <PricingTab themeClasses={themeClasses} user={user} language={language} />
           )}
         </div>
+
+        {/* Onboarding Modal */}
+        <OnboardingModal
+          isOpen={showOnboarding}
+          onClose={handleOnboardingComplete}
+          user={user}
+          userCode={userCode}
+        />
       </div>
     </div>
   );
