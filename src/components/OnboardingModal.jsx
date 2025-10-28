@@ -136,8 +136,8 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
     setCheckingData(true);
     try {
       const { data, error } = await supabase
-        .from('user_profiles')
-        .select('phone, user_language, city, region, birth_date, date_of_birth, age, gender, current_weight, target_weight, height, food_allergies, food_limitations, Activity_level, goal, client_preference, medical_conditions')
+        .from('clients')
+        .select('phone, user_language, city, region, birth_date, age, gender, current_weight, target_weight, height, food_allergies, dietary_preferences, activity_level, goal, client_preference, medical_conditions')
         .eq('user_id', user.id)
         .single();
 
@@ -155,16 +155,16 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
           language: data.user_language || 'en',
           city: data.city || '',
           region: data.region || '',
-          date_of_birth: data.date_of_birth || data.birth_date || '',
+          date_of_birth: data.birth_date || '',
           gender: data.gender || '',
           weight_kg: data.current_weight ? data.current_weight.toString() : '',
           target_weight: data.target_weight ? data.target_weight.toString() : '',
           height_cm: data.height ? data.height.toString() : '',
           food_allergies: data.food_allergies || '',
-          food_limitations: data.food_limitations || '',
-          activity_level: data.Activity_level || '',
+          food_limitations: data.dietary_preferences || '',
+          activity_level: data.activity_level || '',
           goal: data.goal || '',
-          client_preference: data.client_preference || '',
+          client_preference: typeof data.client_preference === 'string' ? data.client_preference : (data.client_preference?.preference || ''),
           medical_conditions: data.medical_conditions || ''
         }));
       }
@@ -208,10 +208,10 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
         console.log('✓ Region has value:', data?.region);
       }
       
-      if (isEmpty(data?.date_of_birth) && isEmpty(data?.birth_date)) {
+      if (isEmpty(data?.birth_date)) {
         missingFields.push('date_of_birth');
       } else {
-        console.log('✓ Birth date has value:', data?.date_of_birth || data?.birth_date);
+        console.log('✓ Birth date has value:', data?.birth_date);
       }
       
       if (isEmpty(data?.gender)) {
@@ -244,16 +244,16 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
         console.log('✓ Food allergies has value:', data?.food_allergies);
       }
       
-      if (isEmpty(data?.food_limitations)) {
+      if (isEmpty(data?.dietary_preferences)) {
         missingFields.push('food_limitations');
       } else {
-        console.log('✓ Food limitations has value:', data?.food_limitations);
+        console.log('✓ Food limitations has value:', data?.dietary_preferences);
       }
       
-      if (isEmpty(data?.Activity_level)) {
+      if (isEmpty(data?.activity_level)) {
         missingFields.push('activity_level');
       } else {
-        console.log('✓ Activity level has value:', data?.Activity_level);
+        console.log('✓ Activity level has value:', data?.activity_level);
       }
       
       if (isEmpty(data?.goal)) {
@@ -302,6 +302,13 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
     }));
   };
 
+  const handleNoneClick = (fieldName) => {
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: ''
+    }));
+  };
+
   const calculateAge = (birthDate) => {
     if (!birthDate) return null;
     const today = new Date();
@@ -317,7 +324,18 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
   const handleNext = async () => {
     // Validate current step fields
     const currentStepFields = filteredSteps[currentStep]?.fields || [];
-    const missingFields = currentStepFields.filter(field => !formData[field]);
+    
+    // Fields that can be empty (None is a valid selection)
+    const optionalFields = ['medical_conditions', 'food_allergies', 'food_limitations', 'client_preference'];
+    
+    const missingFields = currentStepFields.filter(field => {
+      // Skip validation for optional fields (empty string means "None" is selected)
+      if (optionalFields.includes(field)) {
+        return false;
+      }
+      // For other fields, empty value means missing
+      return !formData[field];
+    });
 
     if (missingFields.length > 0) {
       setError(language === 'hebrew' ? 'אנא מלא את כל השדות' : 'Please fill in all fields');
@@ -358,47 +376,102 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
       // Calculate age from date_of_birth
       const age = calculateAge(formData.date_of_birth);
 
-      // Prepare data for user_profiles - only include fields that were actually edited
-      const userProfileData = {
+      // Collect all fields that were shown in the onboarding form
+      const allOnboardingFields = filteredSteps.flatMap(step => step.fields);
+      console.log('📝 Fields shown in onboarding:', allOnboardingFields);
+      console.log('📋 Current formData:', formData);
+      console.log('🔍 Gender check:', { 
+        inFields: allOnboardingFields.includes('gender'), 
+        value: formData.gender,
+        willSave: allOnboardingFields.includes('gender') && formData.gender 
+      });
+      console.log('🔍 Phone check:', { 
+        inFields: allOnboardingFields.includes('phone'), 
+        value: formData.phone,
+        countryCode: formData.phoneCountryCode,
+        willSave: allOnboardingFields.includes('phone') && formData.phone 
+      });
+      
+      // Prepare data for clients - include all fields from onboarding
+      const clientData = {
+        onboarding_completed: true,
         updated_at: new Date().toISOString()
       };
 
-      // Only add fields that were in the onboarding form
+      // Save all fields that were part of the onboarding, regardless of whether they have values
       // Format phone number with country code
-      if (formData.phone) {
-        let phoneNumber = formData.phone.trim().replace(/[-\s]/g, ''); // Remove dashes and spaces
-        
-        // If phone starts with 0 and country code is +972 (Israel), remove the 0 and add +972
-        if (phoneNumber.startsWith('0') && formData.phoneCountryCode === '+972') {
-          phoneNumber = formData.phoneCountryCode + phoneNumber.substring(1);
-        } else if (!phoneNumber.startsWith('+')) {
-          // If it doesn't start with +, prepend the country code
-          phoneNumber = formData.phoneCountryCode + phoneNumber;
+      if (allOnboardingFields.includes('phone')) {
+        if (formData.phone && formData.phone.trim()) {
+          let phoneNumber = formData.phone.trim().replace(/[-\s]/g, ''); // Remove dashes and spaces
+          
+          // If phone starts with 0 and country code is +972 (Israel), remove the 0 and add +972
+          if (phoneNumber.startsWith('0') && formData.phoneCountryCode === '+972') {
+            phoneNumber = formData.phoneCountryCode + phoneNumber.substring(1);
+          } else if (!phoneNumber.startsWith('+')) {
+            // If it doesn't start with +, prepend the country code
+            phoneNumber = formData.phoneCountryCode + phoneNumber;
+          }
+          
+          clientData.phone = phoneNumber;
+          console.log('✅ Phone will be saved:', phoneNumber);
+        } else {
+          console.log('⚠️ Phone field is in onboarding but empty or whitespace');
         }
-        
-        userProfileData.phone = phoneNumber;
       }
-      if (formData.language) userProfileData.user_language = formData.language;
-      if (formData.city) userProfileData.city = formData.city;
-      if (formData.region) userProfileData.region = formData.region;
-      if (formData.date_of_birth) {
-        userProfileData.birth_date = formData.date_of_birth;
-        userProfileData.date_of_birth = formData.date_of_birth;
+      
+      if (allOnboardingFields.includes('language') && formData.language) {
+        clientData.user_language = formData.language;
       }
-      if (age) userProfileData.age = age;
-      if (formData.gender) userProfileData.gender = formData.gender;
-      if (formData.weight_kg) userProfileData.current_weight = parseFloat(formData.weight_kg);
-      if (formData.target_weight) userProfileData.target_weight = parseFloat(formData.target_weight);
-      if (formData.height_cm) userProfileData.height = parseFloat(formData.height_cm);
-      if (formData.food_allergies) userProfileData.food_allergies = formData.food_allergies;
-      if (formData.food_limitations) userProfileData.food_limitations = formData.food_limitations;
-      if (formData.activity_level) userProfileData['Activity_level'] = formData.activity_level;
-      if (formData.goal) userProfileData.goal = formData.goal;
-      if (formData.client_preference) userProfileData.client_preference = formData.client_preference;
-      if (formData.medical_conditions) userProfileData.medical_conditions = formData.medical_conditions;
+      if (allOnboardingFields.includes('city') && formData.city) {
+        clientData.city = formData.city;
+      }
+      if (allOnboardingFields.includes('region') && formData.region) {
+        clientData.region = formData.region;
+      }
+      if (allOnboardingFields.includes('date_of_birth') && formData.date_of_birth) {
+        clientData.birth_date = formData.date_of_birth;
+      }
+      if (allOnboardingFields.includes('date_of_birth') && age) {
+        clientData.age = age;
+      }
+      if (allOnboardingFields.includes('gender')) {
+        if (formData.gender) {
+          clientData.gender = formData.gender;
+          console.log('✅ Gender will be saved:', formData.gender);
+        } else {
+          console.log('⚠️ Gender field is in onboarding but empty');
+        }
+      }
+      if (allOnboardingFields.includes('weight_kg') && formData.weight_kg) {
+        clientData.current_weight = parseFloat(formData.weight_kg);
+      }
+      if (allOnboardingFields.includes('target_weight') && formData.target_weight) {
+        clientData.target_weight = parseFloat(formData.target_weight);
+      }
+      if (allOnboardingFields.includes('height_cm') && formData.height_cm) {
+        clientData.height = parseFloat(formData.height_cm);
+      }
+      if (allOnboardingFields.includes('food_allergies')) {
+        clientData.food_allergies = formData.food_allergies || null;
+      }
+      if (allOnboardingFields.includes('food_limitations')) {
+        clientData.dietary_preferences = formData.food_limitations || null;
+      }
+      if (allOnboardingFields.includes('activity_level') && formData.activity_level) {
+        clientData.activity_level = formData.activity_level;
+      }
+      if (allOnboardingFields.includes('goal') && formData.goal) {
+        clientData.goal = formData.goal;
+      }
+      if (allOnboardingFields.includes('client_preference')) {
+        clientData.client_preference = formData.client_preference || null;
+      }
+      if (allOnboardingFields.includes('medical_conditions')) {
+        clientData.medical_conditions = formData.medical_conditions || null;
+      }
 
       // Prepare data for chat_users
-      // Format phone for chat_users (same format as user_profiles)
+      // Format phone for chat_users (same format as clients)
       let formattedPhone = formData.phone;
       if (formData.phone) {
         let phoneNumber = formData.phone.trim().replace(/[-\s]/g, '');
@@ -431,14 +504,16 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
         updated_at: new Date().toISOString()
       };
 
-      // Update user_profiles
+      console.log('💾 Saving to clients:', clientData);
+      
+      // Update clients
       const { error: profileError } = await supabase
-        .from('user_profiles')
-        .update(userProfileData)
+        .from('clients')
+        .update(clientData)
         .eq('user_id', user.id);
 
       if (profileError) {
-        console.error('Error updating user_profiles:', profileError);
+        console.error('Error updating clients:', profileError);
         throw profileError;
       }
 
@@ -588,8 +663,8 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
                 onChange={handleInputChange}
                 className={`w-full px-4 py-3.5 ${themeClasses.bgCard} border-2 border-gray-600/50 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 ${themeClasses.textPrimary} hover:border-emerald-500/50 cursor-pointer`}
               >
-                <option value="en">English</option>
-                <option value="he">עברית</option>
+                <option value="en">🇬🇧 English (en)</option>
+                <option value="he">🇮🇱 עברית (he)</option>
               </select>
             </div>
           )}
@@ -663,7 +738,7 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
           {currentFields.includes('weight_kg') && (
             <div className="group">
               <label className={`block text-sm font-semibold ${themeClasses.textPrimary} mb-2`}>
-                {language === 'hebrew' ? 'משקל (ק"ג)' : 'Weight (kg)'}
+                {language === 'hebrew' ? 'משקל נוכחי (ק"ג)' : 'Current Weight (kg)'}
               </label>
               <input
                 type="number"
@@ -716,48 +791,114 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
 
           {currentFields.includes('medical_conditions') && (
             <div className="group">
-              <label className={`block text-sm font-semibold ${themeClasses.textPrimary} mb-2`}>
-                {language === 'hebrew' ? 'מצבים רפואיים' : 'Medical Conditions'}
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className={`block text-sm font-semibold ${themeClasses.textPrimary}`}>
+                  {language === 'hebrew' ? 'מצבים רפואיים' : 'Medical Conditions'}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => handleNoneClick('medical_conditions')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    !formData.medical_conditions
+                      ? 'bg-emerald-500/20 border-2 border-emerald-500/50 text-emerald-400'
+                      : 'bg-gray-700/50 border-2 border-gray-600/50 text-gray-400 hover:bg-gray-600/50 hover:border-emerald-500/30 hover:text-emerald-400'
+                  }`}
+                >
+                  {!formData.medical_conditions ? (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  )}
+                  {language === 'hebrew' ? 'אין' : 'None'}
+                </button>
+              </div>
               <textarea
                 name="medical_conditions"
                 value={formData.medical_conditions}
                 onChange={handleInputChange}
                 rows="3"
-                className={`w-full px-4 py-3.5 ${themeClasses.bgCard} border-2 border-gray-600/50 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 ${themeClasses.textPrimary} hover:border-emerald-500/50`}
-                placeholder={language === 'hebrew' ? 'לדוגמה: סוכרת, לחץ דם...' : 'e.g., diabetes, hypertension...'}
+                className={`w-full px-4 py-3.5 ${themeClasses.bgCard} border-2 ${!formData.medical_conditions ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-gray-600/50'} rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 ${themeClasses.textPrimary} hover:border-emerald-500/50`}
+                placeholder={!formData.medical_conditions ? (language === 'hebrew' ? 'לא נבחר - לחץ כדי להוסיף' : 'None selected - click to add') : (language === 'hebrew' ? 'לדוגמה: סוכרת, לחץ דם...' : 'e.g., diabetes, hypertension...')}
               />
             </div>
           )}
 
           {currentFields.includes('food_allergies') && (
             <div className="group">
-              <label className={`block text-sm font-semibold ${themeClasses.textPrimary} mb-2`}>
-                {language === 'hebrew' ? 'אלרגיות למזון' : 'Food Allergies'}
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className={`block text-sm font-semibold ${themeClasses.textPrimary}`}>
+                  {language === 'hebrew' ? 'אלרגיות למזון' : 'Food Allergies'}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => handleNoneClick('food_allergies')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    !formData.food_allergies
+                      ? 'bg-emerald-500/20 border-2 border-emerald-500/50 text-emerald-400'
+                      : 'bg-gray-700/50 border-2 border-gray-600/50 text-gray-400 hover:bg-gray-600/50 hover:border-emerald-500/30 hover:text-emerald-400'
+                  }`}
+                >
+                  {!formData.food_allergies ? (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  )}
+                  {language === 'hebrew' ? 'אין' : 'None'}
+                </button>
+              </div>
               <textarea
                 name="food_allergies"
                 value={formData.food_allergies}
                 onChange={handleInputChange}
                 rows="3"
-                className={`w-full px-4 py-3.5 ${themeClasses.bgCard} border-2 border-gray-600/50 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 ${themeClasses.textPrimary} hover:border-emerald-500/50`}
-                placeholder={language === 'hebrew' ? 'לדוגמה: בוטנים, חלב...' : 'e.g., peanuts, dairy...'}
+                className={`w-full px-4 py-3.5 ${themeClasses.bgCard} border-2 ${!formData.food_allergies ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-gray-600/50'} rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 ${themeClasses.textPrimary} hover:border-emerald-500/50`}
+                placeholder={!formData.food_allergies ? (language === 'hebrew' ? 'לא נבחר - לחץ כדי להוסיף' : 'None selected - click to add') : (language === 'hebrew' ? 'לדוגמה: בוטנים, חלב...' : 'e.g., peanuts, dairy...')}
               />
             </div>
           )}
 
           {currentFields.includes('food_limitations') && (
             <div className="group">
-              <label className={`block text-sm font-semibold ${themeClasses.textPrimary} mb-2`}>
-                {language === 'hebrew' ? 'הגבלות תזונתיות' : 'Food Limitations'}
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className={`block text-sm font-semibold ${themeClasses.textPrimary}`}>
+                  {language === 'hebrew' ? 'הגבלות תזונתיות' : 'Food Limitations'}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => handleNoneClick('food_limitations')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    !formData.food_limitations
+                      ? 'bg-emerald-500/20 border-2 border-emerald-500/50 text-emerald-400'
+                      : 'bg-gray-700/50 border-2 border-gray-600/50 text-gray-400 hover:bg-gray-600/50 hover:border-emerald-500/30 hover:text-emerald-400'
+                  }`}
+                >
+                  {!formData.food_limitations ? (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  )}
+                  {language === 'hebrew' ? 'אין' : 'None'}
+                </button>
+              </div>
               <textarea
                 name="food_limitations"
                 value={formData.food_limitations}
                 onChange={handleInputChange}
                 rows="3"
-                className={`w-full px-4 py-3.5 ${themeClasses.bgCard} border-2 border-gray-600/50 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 ${themeClasses.textPrimary} hover:border-emerald-500/50`}
-                placeholder={language === 'hebrew' ? 'לדוגמה: צמחוני, כשר...' : 'e.g., vegetarian, kosher...'}
+                className={`w-full px-4 py-3.5 ${themeClasses.bgCard} border-2 ${!formData.food_limitations ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-gray-600/50'} rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 ${themeClasses.textPrimary} hover:border-emerald-500/50`}
+                placeholder={!formData.food_limitations ? (language === 'hebrew' ? 'לא נבחר - לחץ כדי להוסיף' : 'None selected - click to add') : (language === 'hebrew' ? 'לדוגמה: צמחוני, כשר...' : 'e.g., vegetarian, kosher...')}
               />
             </div>
           )}
@@ -796,26 +937,50 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
               >
                 <option value="">{language === 'hebrew' ? 'בחר מטרה' : 'Select a goal'}</option>
                 <option value="lose">{language === 'hebrew' ? 'ירידה במשקל' : 'Lose Weight'}</option>
-                <option value="cut">{language === 'hebrew' ? 'CUT (ירידה במשקל תוך שמירה על מסת שריר)' : 'Cut (Lose fat, maintain muscle)'}</option>
-                <option value="general_health">{language === 'hebrew' ? 'בריאות כללית' : 'General Health'}</option>
+                <option value="cut">{language === 'hebrew' ? 'CUT' : 'CUT'}</option>
                 <option value="maintain">{language === 'hebrew' ? 'שמירה על משקל' : 'Maintain Weight'}</option>
+                <option value="gain">{language === 'hebrew' ? 'עלייה במשקל' : 'Gain Weight'}</option>
                 <option value="muscle">{language === 'hebrew' ? 'בניית שרירים' : 'Build Muscle'}</option>
+                <option value="improve_performance">{language === 'hebrew' ? 'שיפור ביצועים' : 'Improve Performance'}</option>
+                <option value="improve_health">{language === 'hebrew' ? 'שיפור בריאות' : 'Improve Health'}</option>
               </select>
             </div>
           )}
 
           {currentFields.includes('client_preference') && (
             <div className="group">
-              <label className={`block text-sm font-semibold ${themeClasses.textPrimary} mb-2`}>
-                {language === 'hebrew' ? 'העדפות אישיות' : 'Personal Preferences'}
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className={`block text-sm font-semibold ${themeClasses.textPrimary}`}>
+                  {language === 'hebrew' ? 'העדפות אישיות' : 'Personal Preferences'}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => handleNoneClick('client_preference')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    !formData.client_preference
+                      ? 'bg-emerald-500/20 border-2 border-emerald-500/50 text-emerald-400'
+                      : 'bg-gray-700/50 border-2 border-gray-600/50 text-gray-400 hover:bg-gray-600/50 hover:border-emerald-500/30 hover:text-emerald-400'
+                  }`}
+                >
+                  {!formData.client_preference ? (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  )}
+                  {language === 'hebrew' ? 'אין' : 'None'}
+                </button>
+              </div>
               <textarea
                 name="client_preference"
                 value={formData.client_preference}
                 onChange={handleInputChange}
                 rows="4"
-                className={`w-full px-4 py-3.5 ${themeClasses.bgCard} border-2 border-gray-600/50 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 ${themeClasses.textPrimary} hover:border-emerald-500/50`}
-                placeholder={language === 'hebrew' ? 'מה אתה אוהב לאכול? מה אתה לא אוהב לאכול?' : 'What do you like to eat? What don\'t you like to eat?'}
+                className={`w-full px-4 py-3.5 ${themeClasses.bgCard} border-2 ${!formData.client_preference ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-gray-600/50'} rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 ${themeClasses.textPrimary} hover:border-emerald-500/50`}
+                placeholder={!formData.client_preference ? (language === 'hebrew' ? 'לא נבחר - לחץ כדי להוסיף' : 'None selected - click to add') : (language === 'hebrew' ? 'מה אתה אוהב לאכול? מה אתה לא אוהב לאכול?' : 'What do you like to eat? What don\'t you like to eat?')}
               />
             </div>
           )}

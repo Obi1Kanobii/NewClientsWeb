@@ -1576,7 +1576,8 @@ export const LanguageProvider = ({ children }) => {
     }, 150);
   };
 
-  const t = translations[language];
+  // Ensure t always has a valid value, defaulting to English if language is invalid
+  const t = translations[language] || translations.english;
 
   const value = {
     language,

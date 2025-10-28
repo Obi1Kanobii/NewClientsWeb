@@ -43,8 +43,8 @@ const ProfilePage = () => {
   const checkOnboardingStatus = async () => {
     try {
       const { data, error } = await supabase
-        .from('user_profiles')
-        .select('user_code, phone, user_language, city, birth_date, age, gender, current_weight, target_weight, height, food_allergies, food_limitations, Activity_level, goal, client_preference, region, medical_conditions')
+        .from('clients')
+        .select('user_code, onboarding_completed, phone, user_language, city, birth_date, age, gender, current_weight, target_weight, height, food_allergies, dietary_preferences, food_limitations, activity_level, goal, client_preference, region, medical_conditions')
         .eq('user_id', user.id)
         .single();
 
@@ -55,6 +55,12 @@ const ProfilePage = () => {
 
       if (data) {
         setUserCode(data.user_code);
+        
+        // If onboarding is already done, don't show the modal
+        if (data.onboarding_completed === true) {
+          setShowOnboarding(false);
+          return;
+        }
         
         // Check if onboarding is needed (missing critical fields)
         const needsOnboarding = !data.phone || 
@@ -67,8 +73,9 @@ const ProfilePage = () => {
           !data.target_weight ||
           !data.height ||
           !data.food_allergies ||
+          !data.dietary_preferences ||
           !data.food_limitations ||
-          !data.Activity_level ||
+          !data.activity_level ||
           !data.goal ||
           !data.client_preference ||
           !data.region ||
@@ -90,8 +97,8 @@ const ProfilePage = () => {
   const handleOnboardingComplete = async () => {
     // Reload profile data
     await loadProfileData();
-    // Close the modal
-    setShowOnboarding(false);
+    // Re-check onboarding status (will close modal if onboarding_completed is true)
+    await checkOnboardingStatus();
   };
 
   // Load profile data on component mount
@@ -110,7 +117,7 @@ const ProfilePage = () => {
       }
       
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('clients')
         .select('*')
         .eq('user_id', user.id)
         .single();
@@ -187,9 +194,7 @@ const ProfilePage = () => {
     if (!profileData.region.trim()) missingFields.push('Region');
     if (!profileData.city.trim()) missingFields.push('City');
     if (!profileData.timezone) missingFields.push('Timezone');
-    if (!profileData.dietaryPreferences.trim()) missingFields.push('Dietary Preferences');
-    if (!profileData.foodAllergies.trim()) missingFields.push('Food Allergies');
-    if (!profileData.medicalConditions.trim()) missingFields.push('Medical Conditions');
+    // Health information fields are optional - no validation needed
 
     if (missingFields.length > 0) {
       console.error('Validation failed. Missing required fields:', missingFields);
@@ -230,7 +235,7 @@ const ProfilePage = () => {
 
       // First, check if a record exists for this user
       const { data: existingData, error: checkError } = await supabase
-        .from('user_profiles')
+        .from('clients')
         .select('id')
         .eq('user_id', user.id)
         .single();
@@ -239,13 +244,13 @@ const ProfilePage = () => {
       if (checkError && checkError.code === 'PGRST116') {
         // No existing record, insert new one
         result = await supabase
-          .from('user_profiles')
+          .from('clients')
           .insert(dataToSave)
           .select();
       } else if (existingData) {
         // Record exists, update it
         result = await supabase
-          .from('user_profiles')
+          .from('clients')
           .update({
             full_name: dataToSave.full_name,
             email: dataToSave.email,
@@ -311,11 +316,12 @@ const ProfilePage = () => {
               .single();
 
             if (!chatUserError && chatUser) {
-              // Map profile data to chat_users fields
+              // Map profile data to chat_users fields - sync all fields
               const chatUpdates = {
                 full_name: dataToSave.full_name,
                 email: dataToSave.email,
                 phone_number: dataToSave.phone,
+                whatsapp_number: dataToSave.phone, // Also update whatsapp_number
                 region: dataToSave.region,
                 city: dataToSave.city,
                 timezone: dataToSave.timezone,
@@ -323,15 +329,21 @@ const ProfilePage = () => {
                 gender: dataToSave.gender,
                 date_of_birth: dataToSave.birth_date,
                 food_allergies: dataToSave.food_allergies,
+                food_limitations: dataToSave.dietary_preferences, // Map dietary_preferences to food_limitations
+                medical_conditions: dataToSave.medical_conditions,
                 updated_at: dataToSave.updated_at
               };
 
-              await supabaseSecondary
+              const { error: chatUpdateError } = await supabaseSecondary
                 .from('chat_users')
                 .update(chatUpdates)
                 .eq('id', chatUser.id);
               
-              console.log('Chat user synced successfully');
+              if (chatUpdateError) {
+                console.error('Error updating chat_users:', chatUpdateError);
+              } else {
+                console.log('Chat user synced successfully with all fields');
+              }
             }
           } catch (syncError) {
             console.error('Error syncing to chat_users:', syncError);
@@ -879,93 +891,51 @@ const ProfileTab = ({ profileData, onInputChange, onSave, isSaving, saveStatus, 
             </div>
             <div>
               <h3 className={`${themeClasses.textPrimary} text-xl font-bold`}>
-                Health Information *
+                Health Information
               </h3>
               <p className={`${themeClasses.textSecondary} text-sm`}>
-                Please provide your health details or click "None" if not applicable
+                Optional - provide your health details if relevant
               </p>
             </div>
           </div>
           
           <div className="space-y-6">
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <label className={`${themeClasses.textSecondary} text-sm font-semibold`}>
-                  Dietary Preferences *
-                </label>
-                <button
-                  type="button"
-                  onClick={() => onInputChange('dietaryPreferences', 'None')}
-                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                    profileData.dietaryPreferences === 'None' 
-                      ? 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-900 dark:text-emerald-300 dark:border-emerald-700'
-                      : `${themeClasses.bgCard} ${themeClasses.textSecondary} ${themeClasses.borderPrimary} hover:${themeClasses.bgSecondary}`
-                  }`}
-                >
-                  None
-                </button>
-              </div>
+              <label className={`${themeClasses.textSecondary} block text-sm font-semibold mb-3`}>
+                Dietary Preferences
+              </label>
               <textarea
                 value={profileData.dietaryPreferences}
                 onChange={(e) => onInputChange('dietaryPreferences', e.target.value)}
                 rows={3}
                 className={`w-full px-4 py-3 rounded-lg border-2 transition-all ${themeClasses.inputBg} ${themeClasses.inputFocus} ${themeClasses.textPrimary} focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:focus:ring-emerald-800`}
                 placeholder="e.g., Vegetarian, Vegan, Gluten-free, Mediterranean diet..."
-                required
               />
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <label className={`${themeClasses.textSecondary} text-sm font-semibold`}>
-                  Food Allergies *
-                </label>
-                <button
-                  type="button"
-                  onClick={() => onInputChange('foodAllergies', 'None')}
-                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                    profileData.foodAllergies === 'None' 
-                      ? 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-900 dark:text-emerald-300 dark:border-emerald-700'
-                      : `${themeClasses.bgCard} ${themeClasses.textSecondary} ${themeClasses.borderPrimary} hover:${themeClasses.bgSecondary}`
-                  }`}
-                >
-                  None
-                </button>
-              </div>
+              <label className={`${themeClasses.textSecondary} block text-sm font-semibold mb-3`}>
+                Food Allergies
+              </label>
               <textarea
                 value={profileData.foodAllergies}
                 onChange={(e) => onInputChange('foodAllergies', e.target.value)}
                 rows={3}
                 className={`w-full px-4 py-3 rounded-lg border-2 transition-all ${themeClasses.inputBg} ${themeClasses.inputFocus} ${themeClasses.textPrimary} focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:focus:ring-emerald-800`}
                 placeholder="e.g., Nuts, Shellfish, Dairy, Soy..."
-                required
               />
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <label className={`${themeClasses.textSecondary} text-sm font-semibold`}>
-                  Medical Conditions *
-                </label>
-                <button
-                  type="button"
-                  onClick={() => onInputChange('medicalConditions', 'None')}
-                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                    profileData.medicalConditions === 'None' 
-                      ? 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-900 dark:text-emerald-300 dark:border-emerald-700'
-                      : `${themeClasses.bgCard} ${themeClasses.textSecondary} ${themeClasses.borderPrimary} hover:${themeClasses.bgSecondary}`
-                  }`}
-                >
-                  None
-                </button>
-              </div>
+              <label className={`${themeClasses.textSecondary} block text-sm font-semibold mb-3`}>
+                Medical Conditions
+              </label>
               <textarea
                 value={profileData.medicalConditions}
                 onChange={(e) => onInputChange('medicalConditions', e.target.value)}
                 rows={3}
                 className={`w-full px-4 py-3 rounded-lg border-2 transition-all ${themeClasses.inputBg} ${themeClasses.inputFocus} ${themeClasses.textPrimary} focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:focus:ring-emerald-800`}
                 placeholder="e.g., Diabetes, Hypertension, Heart condition..."
-                required
               />
             </div>
           </div>

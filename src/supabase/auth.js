@@ -118,7 +118,7 @@ export const generateUniqueUserCode = async () => {
     // Check if this code already exists in the database
     try {
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('clients')
         .select('user_code')
         .eq('user_code', userCode)
         .single();
@@ -147,7 +147,7 @@ export const generateUniqueUserCode = async () => {
   throw new Error('Failed to generate unique user code after maximum attempts');
 };
 
-// Create client record in user_profiles table and chat_users table
+// Create client record in clients table and chat_users table
 export const createClientRecord = async (userId, userData) => {
   try {
     console.log('Creating client record for user:', userId, 'with data:', userData);
@@ -163,7 +163,7 @@ export const createClientRecord = async (userId, userData) => {
       console.warn('Service role key not found, using regular client');
       // Fallback to regular client
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('clients')
         .insert([
           {
             user_id: userId,
@@ -171,8 +171,7 @@ export const createClientRecord = async (userId, userData) => {
             email: userData.email,
             phone: userData.phone,
             user_code: userCode,
-            role: 'client',
-            activated: true
+            status: 'active'
           }
         ])
         .select()
@@ -228,7 +227,7 @@ export const createClientRecord = async (userId, userData) => {
     );
 
     const { data, error } = await supabaseAdmin
-      .from('user_profiles')
+      .from('clients')
       .insert([
         {
           user_id: userId,
@@ -236,8 +235,7 @@ export const createClientRecord = async (userId, userData) => {
           email: userData.email,
           phone: userData.phone,
           user_code: userCode,
-          role: 'client',
-          activated: true
+          status: 'active'
         }
       ])
       .select()
@@ -293,7 +291,7 @@ export const createClientRecord = async (userId, userData) => {
 export const getClientRecord = async (userId) => {
   try {
     const { data, error } = await supabase
-      .from('user_profiles')
+      .from('clients')
       .select('*')
       .eq('user_id', userId)
       .single()
@@ -306,11 +304,11 @@ export const getClientRecord = async (userId) => {
   }
 }
 
-// Update client record in user_profiles and optionally sync to chat_users
+// Update client record in clients and optionally sync to chat_users
 export const updateClientRecord = async (userId, updates) => {
   try {
     const { data, error } = await supabase
-      .from('user_profiles')
+      .from('clients')
       .update(updates)
       .eq('user_id', userId)
       .select()

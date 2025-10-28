@@ -73,7 +73,7 @@ function SignupPage() {
       if (error) {
         setError(error.message);
       } else {
-        // Create client record in user_profiles table
+        // Create client record in clients table
         if (data?.user?.id) {
           try {
             console.log('Attempting to create client record...');

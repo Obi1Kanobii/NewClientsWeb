@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Primary Supabase connection (for users, user_profiles, auth)
+// Primary Supabase connection (for users, clients, auth)
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL
 const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY
 
