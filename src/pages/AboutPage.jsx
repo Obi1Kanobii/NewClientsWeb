@@ -14,24 +14,24 @@ const AboutPage = () => {
       <Navigation />
 
       {/* Hero Section */}
-        <div className="relative bg-gradient-to-b from-slate-800 via-slate-900 to-black py-20">
+        <div className="relative bg-gradient-to-b from-slate-800 via-slate-900 to-black py-12 sm:py-16 md:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             {/* Logo */}
-            <div className="mb-8">
-              <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto shadow-2xl shadow-emerald-500/25 animate-pulse">
-                <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <div className="mb-6 sm:mb-8">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto shadow-2xl shadow-emerald-500/25 animate-pulse">
+                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/>
                 </svg>
               </div>
             </div>
 
             {/* Main Heading */}
-            <h1 className="text-5xl md:text-6xl font-bold text-emerald-400 mb-6 animate-fadeIn">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-emerald-400 mb-4 sm:mb-6 px-2 animate-fadeIn">
               {language === 'hebrew' ? 'דיוק בינה מלאכותית, הדרכה קלינית מומחית' : 'AI Precision, Expert Clinical Guidance'}
             </h1>
 
             {/* Description */}
-            <div className="max-w-4xl mx-auto space-y-4 text-lg text-slate-300 animate-slideInUp">
+            <div className="max-w-4xl mx-auto space-y-3 sm:space-y-4 text-base sm:text-lg text-slate-300 px-2 animate-slideInUp">
               <p>
                 {language === 'hebrew' 
                   ? 'BetterChoice נוסדה ב-2025 מתוך צורך אמיתי: לספק לאנשים גישה לתזונה מדויקת, מקצועית ומותאמת אישית'
@@ -49,9 +49,9 @@ const AboutPage = () => {
         </div>
 
         {/* Mission & Vision Section */}
-        <div className="py-20 bg-slate-900">
+        <div className="py-12 sm:py-16 md:py-20 bg-slate-900">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10 md:gap-12">
               {/* Mission Card */}
               <div className={`${themeClasses.bgCard} rounded-2xl p-8 shadow-xl border border-slate-700 hover:border-emerald-500/30 transition-all duration-300 animate-slideInUp`}>
                 <div className="text-center mb-8">
@@ -127,19 +127,19 @@ const AboutPage = () => {
         </div>
 
         {/* Journey Section */}
-        <div className="py-20 bg-slate-800">
+        <div className="py-12 sm:py-16 md:py-20 bg-slate-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-emerald-400 mb-4 animate-fadeIn">
+            <div className="text-center mb-8 sm:mb-12 md:mb-16">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-emerald-400 mb-3 sm:mb-4 animate-fadeIn">
                 {language === 'hebrew' ? 'המסע שלנו' : 'Our Journey'}
               </h2>
-              <p className="text-xl text-slate-300 animate-slideInUp">
+              <p className="text-base sm:text-lg md:text-xl text-slate-300 px-2 animate-slideInUp">
                 {language === 'hebrew' ? 'המסע המותאם אישית שלך לבריאות טובה יותר מתחיל כאן' : 'Your personalized journey to better health starts here'}
               </p>
             </div>
 
             {/* Journey Steps */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 mb-8 sm:mb-12 md:mb-16">
               {[
                 {
                   number: '1',
@@ -225,15 +225,15 @@ const AboutPage = () => {
         </div>
 
         {/* Team Section */}
-        <div className="py-20 bg-slate-900">
+        <div className="py-12 sm:py-16 md:py-20 bg-slate-900">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-emerald-400 mb-4 animate-fadeIn">
+            <div className="text-center mb-8 sm:mb-12 md:mb-16">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-emerald-400 mb-3 sm:mb-4 animate-fadeIn">
                 {language === 'hebrew' ? 'הצוות שלנו' : 'Our Team'}
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10 md:gap-12">
               {/* Gal Becker */}
               <div className={`${themeClasses.bgCard} rounded-2xl p-8 shadow-xl border border-slate-700 hover:border-emerald-500/30 transition-all duration-300 animate-slideInUp`}>
                 <div className="text-center">
@@ -318,12 +318,12 @@ const AboutPage = () => {
         </div>
 
         {/* Contact Section */}
-        <div className="py-20 bg-gradient-to-r from-emerald-600 to-emerald-700">
+        <div className="py-12 sm:py-16 md:py-20 bg-gradient-to-r from-emerald-600 to-emerald-700">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-4xl font-bold text-white mb-6 animate-fadeIn">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 sm:mb-6 animate-fadeIn">
               {language === 'hebrew' ? 'צור קשר' : 'Contact Us'}
             </h2>
-            <p className="text-xl text-emerald-100 mb-12 animate-slideInUp">
+            <p className="text-base sm:text-lg md:text-xl text-emerald-100 mb-8 sm:mb-10 md:mb-12 px-2 animate-slideInUp">
               {language === 'hebrew' 
                 ? 'מוכנים להתחיל את המסע שלכם לבריאות טובה יותר? צרו איתנו קשר היום!'
                 : 'Ready to start your journey to better health? Contact us today!'
@@ -331,7 +331,7 @@ const AboutPage = () => {
             </p>
 
             {/* Contact Info */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-10 md:mb-12">
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 animate-slideInUp">
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-4">
                   <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">

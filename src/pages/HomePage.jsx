@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import * as CookieConsent from 'vanilla-cookieconsent';
 import Navigation from '../components/Navigation';
 import { supabase, supabaseSecondary } from '../supabase/supabaseClient';
 
@@ -111,9 +112,9 @@ function HomePage() {
       {/* Main Content */}
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className={`text-5xl md:text-6xl font-bold ${themeClasses.textPrimary} mb-6`}>
+            <h2 className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold ${themeClasses.textPrimary} mb-4 sm:mb-6`}>
               <span className="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">{t.hero.welcome}</span>
               <br />
               <span className="bg-gradient-to-r from-green-500 to-teal-600 bg-clip-text text-transparent">{t.hero.subtitle}</span>
@@ -122,18 +123,18 @@ function HomePage() {
               <br />
               <span className="bg-gradient-to-r from-purple-500 to-orange-600 bg-clip-text text-transparent">{t.hero.mainDescription}</span>
             </h2>
-            <p className={`text-xl md:text-2xl ${themeClasses.textSecondary} mb-10 leading-relaxed`}>
+            <p className={`text-base sm:text-lg md:text-xl lg:text-2xl ${themeClasses.textSecondary} mb-6 sm:mb-8 md:mb-10 leading-relaxed px-2`}>
               {t.hero.fullDescription}
             </p>
-            <div className="space-y-4 mb-10">
+            <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8 md:mb-10">
               {t.hero.features.map((feature, index) => (
-                <div key={index} className="flex items-start">
+                <div key={index} className="flex items-start px-2">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                  <p className={`text-lg ${themeClasses.textSecondary} text-left`}>{feature}</p>
+                  <p className={`text-sm sm:text-base md:text-lg ${themeClasses.textSecondary} text-left`}>{feature}</p>
                 </div>
               ))}
             </div>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-6 sm:mb-8 px-2">
               <button 
                 onClick={() => {
                   if (!isAuthenticated) {
@@ -143,7 +144,7 @@ function HomePage() {
                     console.log('User is authenticated - handle join today action');
                   }
                 }}
-                className={`${themeClasses.btnPrimary} text-white px-8 py-4 rounded-full text-lg font-semibold transform hover:-translate-y-1 transition-all duration-300 ${themeClasses.shadowCard} ${themeClasses.shadowHover} flex items-center justify-center`}
+                className={`${themeClasses.btnPrimary} text-white px-6 sm:px-8 py-3 sm:py-4 rounded-full text-base sm:text-lg font-semibold transform hover:-translate-y-1 transition-all duration-300 ${themeClasses.shadowCard} ${themeClasses.shadowHover} flex items-center justify-center w-full sm:w-auto`}
               >
                 <span className="mr-2">✨</span>
                 {t.hero.buttons.joinToday}
@@ -153,7 +154,7 @@ function HomePage() {
                 onClick={() => {
                   alert(language === 'hebrew' ? 'תכונה זו נמצאת בפיתוח - בקרוב!' : 'This feature is currently in development - coming soon!');
                 }}
-                className={`border-2 border-gray-400 ${isDarkMode ? 'text-gray-400 hover:bg-gray-600 hover:text-white' : 'text-gray-500 hover:bg-gray-500 hover:text-white'} px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 flex items-center justify-center relative`}
+                className={`border-2 border-gray-400 ${isDarkMode ? 'text-gray-400 hover:bg-gray-600 hover:text-white' : 'text-gray-500 hover:bg-gray-500 hover:text-white'} px-6 sm:px-8 py-3 sm:py-4 rounded-full text-base sm:text-lg font-semibold transition-all duration-300 flex items-center justify-center relative w-full sm:w-auto`}
               >
                 <span className="mr-2">🏋️</span>
                 {t.hero.buttons.joinGym}
@@ -162,36 +163,36 @@ function HomePage() {
                 </span>
               </button>
             </div>
-            <div className="flex justify-center space-x-8 space-x-reverse">
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 md:gap-8 px-2">
               <div className="flex items-center">
-                <span className="text-red-500 mr-2">❤️</span>
-                <span className={themeClasses.textSecondary}>{t.hero.footer.satisfiedClients}</span>
+                <span className="text-red-500 mr-2 text-lg sm:text-base">❤️</span>
+                <span className={`${themeClasses.textSecondary} text-xs sm:text-sm md:text-base`}>{t.hero.footer.satisfiedClients}</span>
               </div>
               <div className="flex items-center">
-                <span className="text-yellow-500 mr-2">✨</span>
-                <span className={themeClasses.textSecondary}>{t.hero.footer.beginJourney}</span>
+                <span className="text-yellow-500 mr-2 text-lg sm:text-base">✨</span>
+                <span className={`${themeClasses.textSecondary} text-xs sm:text-sm md:text-base`}>{t.hero.footer.beginJourney}</span>
               </div>
               <div className="flex items-center">
-                <span className="text-green-500 mr-2">✅</span>
-                <span className={themeClasses.textSecondary}>{t.hero.footer.verifiedSuccess}</span>
+                <span className="text-green-500 mr-2 text-lg sm:text-base">✅</span>
+                <span className={`${themeClasses.textSecondary} text-xs sm:text-sm md:text-base`}>{t.hero.footer.verifiedSuccess}</span>
               </div>
             </div>
           </div>
         </section>
 
         {/* Pain Section */}
-        <section className={`py-20 ${themeClasses.sectionBg}`}>
+        <section className={`py-12 sm:py-16 md:py-20 ${themeClasses.sectionBg}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h3 className={`text-4xl font-bold ${themeClasses.textPrimary} mb-4`}>
+            <div className="text-center mb-8 sm:mb-12 md:mb-16">
+              <h3 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${themeClasses.textPrimary} mb-3 sm:mb-4`}>
                 <span className="text-blue-500">We see</span> <span className="text-white">your pain</span>
               </h3>
-              <p className={`text-xl ${themeClasses.textSecondary} max-w-3xl mx-auto`}>
+              <p className={`text-base sm:text-lg md:text-xl ${themeClasses.textSecondary} max-w-3xl mx-auto px-2`}>
                 {t.painSection.subtitle}
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8 mb-8 sm:mb-12 md:mb-16">
               <div className={`${themeClasses.bgCard} rounded-xl ${themeClasses.shadowCard} p-6`}>
                 <div className="flex items-center mb-4">
                   <div className="w-16 h-16 bg-teal-500 rounded-full flex items-center justify-center mr-4">
@@ -274,9 +275,9 @@ function HomePage() {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
               <div className="text-center">
-                <div className={`text-4xl font-bold ${isDarkMode ? 'text-red-400' : 'text-red-600'} mb-2`}>
+                <div className={`text-3xl sm:text-4xl font-bold ${isDarkMode ? 'text-red-400' : 'text-red-600'} mb-2`}>
                   {t.painSection.statistics.dietFailure.percentage}
                 </div>
                 <p className={themeClasses.textSecondary}>{t.painSection.statistics.dietFailure.description}</p>
@@ -374,18 +375,18 @@ function HomePage() {
         </section>
 
         {/* Athletes & Professionals Section */}
-        <section className={`py-20 ${themeClasses.sectionBg}`}>
+        <section className={`py-12 sm:py-16 md:py-20 ${themeClasses.sectionBg}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h3 className={`text-4xl font-bold ${themeClasses.textPrimary} mb-4`}>
+            <div className="text-center mb-8 sm:mb-12 md:mb-16">
+              <h3 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${themeClasses.textPrimary} mb-3 sm:mb-4`}>
                 {t.athletesSection.title}
               </h3>
-              <p className={`text-xl ${themeClasses.textSecondary} max-w-3xl mx-auto`}>
+              <p className={`text-base sm:text-lg md:text-xl ${themeClasses.textSecondary} max-w-3xl mx-auto px-2`}>
                 {t.athletesSection.subtitle}
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 mb-8 sm:mb-12 md:mb-16">
               <div className={`${themeClasses.bgCard} rounded-xl ${themeClasses.shadowCard} p-6`}>
                 <div className="text-center mb-4">
                   <div className="text-4xl mb-4">🔗</div>
@@ -498,16 +499,16 @@ function HomePage() {
         </section>
 
         {/* Services Section */}
-        <section className={`py-20 ${themeClasses.sectionBg}`}>
+        <section className={`py-12 sm:py-16 md:py-20 ${themeClasses.sectionBg}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h3 className={`text-4xl font-bold ${themeClasses.textPrimary} mb-4`}>{t.services.title}</h3>
-              <p className={`text-xl ${themeClasses.textSecondary} max-w-3xl mx-auto`}>
+            <div className="text-center mb-8 sm:mb-12 md:mb-16">
+              <h3 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${themeClasses.textPrimary} mb-3 sm:mb-4`}>{t.services.title}</h3>
+              <p className={`text-base sm:text-lg md:text-xl ${themeClasses.textSecondary} max-w-3xl mx-auto px-2`}>
                 {t.services.subtitle}
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
               <div className={`${themeClasses.bgCard} rounded-xl ${themeClasses.shadowCard} p-6 ${themeClasses.shadowHover} transition-shadow duration-300`}>
                 <div className="text-4xl mb-4">🥗</div>
                 <h4 className={`text-xl font-bold ${themeClasses.textPrimary} mb-3`}>{t.services.nutrition.title}</h4>
@@ -656,13 +657,13 @@ function HomePage() {
               </p>
               
               {/* Toggle Controls */}
-              <div className={`flex flex-col sm:flex-row items-center justify-center gap-6 mb-12`}>
+              <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mb-8 sm:mb-12`}>
                 {/* Commitment Toggle */}
-                <div className={`${themeClasses.bgCard} rounded-2xl p-2 border-2 ${themeClasses.borderPrimary}`}>
+                <div className={`${themeClasses.bgCard} rounded-2xl p-2 border-2 ${themeClasses.borderPrimary} w-full sm:w-auto`}>
                   <div className="flex">
                     <button 
                       onClick={() => setCommitmentPeriod && setCommitmentPeriod(3)}
-                      className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                      className={`flex-1 sm:flex-none px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-semibold text-sm sm:text-base transition-all duration-300 ${
                         (commitmentPeriod || 3) === 3 
                           ? 'bg-emerald-500 text-white shadow-lg' 
                           : `${themeClasses.textSecondary} hover:${themeClasses.textPrimary}`
@@ -672,7 +673,7 @@ function HomePage() {
                     </button>
                     <button 
                       onClick={() => setCommitmentPeriod && setCommitmentPeriod(6)}
-                      className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 relative ${
+                      className={`flex-1 sm:flex-none px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-semibold text-sm sm:text-base transition-all duration-300 relative ${
                         (commitmentPeriod || 3) === 6 
                           ? 'bg-emerald-500 text-white shadow-lg' 
                           : `${themeClasses.textSecondary} hover:${themeClasses.textPrimary}`
@@ -687,11 +688,11 @@ function HomePage() {
                 </div>
                 
                 {/* Currency Toggle */}
-                <div className={`${themeClasses.bgCard} rounded-2xl p-2 border-2 ${themeClasses.borderPrimary}`}>
+                <div className={`${themeClasses.bgCard} rounded-2xl p-2 border-2 ${themeClasses.borderPrimary} w-full sm:w-auto`}>
                   <div className="flex">
                     <button 
                       onClick={() => setShowUSD(false)}
-                      className={`px-4 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                      className={`flex-1 sm:flex-none px-4 py-2 sm:py-3 rounded-xl font-semibold text-sm sm:text-base transition-all duration-300 ${
                         !showUSD 
                           ? 'bg-blue-500 text-white shadow-lg' 
                           : `${themeClasses.textSecondary} hover:${themeClasses.textPrimary}`
@@ -701,7 +702,7 @@ function HomePage() {
                     </button>
                     <button 
                       onClick={() => setShowUSD(true)}
-                      className={`px-4 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                      className={`flex-1 sm:flex-none px-4 py-2 sm:py-3 rounded-xl font-semibold text-sm sm:text-base transition-all duration-300 ${
                         showUSD 
                           ? 'bg-blue-500 text-white shadow-lg' 
                           : `${themeClasses.textSecondary} hover:${themeClasses.textPrimary}`
@@ -714,9 +715,9 @@ function HomePage() {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
               {/* Basic Plan - Nutrition Only */}
-              <div className={`${themeClasses.bgCard} border-2 ${themeClasses.borderPrimary} rounded-xl p-8 hover:border-emerald-500 transition-colors duration-300`}>
+              <div className={`${themeClasses.bgCard} border-2 ${themeClasses.borderPrimary} rounded-xl p-6 md:p-8 hover:border-emerald-500 transition-colors duration-300`}>
                 <div className="text-center">
                   <h4 className={`text-2xl font-bold ${themeClasses.textPrimary} mb-4`}>
                     {language === 'hebrew' ? 'בסיסי' : 'Basic'}
@@ -763,7 +764,7 @@ function HomePage() {
               </div>
               
               {/* Professional Plan - Nutrition + Training */}
-              <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-8 text-white relative">
+              <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-6 md:p-8 text-white relative mt-8 md:mt-0">
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                   <span className="bg-yellow-400 text-gray-900 px-4 py-1 rounded-full text-sm font-bold">
                     {language === 'hebrew' ? 'הכי פופולרי' : 'Most Popular'}
@@ -811,7 +812,7 @@ function HomePage() {
               </div>
               
               {/* Premium Plan - BetterPro with commitment pricing */}
-              <div className={`${themeClasses.bgCard} border-2 border-purple-500 rounded-xl p-8 hover:border-purple-400 transition-colors duration-300 relative overflow-hidden`}>
+              <div className={`${themeClasses.bgCard} border-2 border-purple-500 rounded-xl p-6 md:p-8 hover:border-purple-400 transition-colors duration-300 relative overflow-hidden`}>
                 <div className="absolute top-0 right-0 bg-purple-500 text-white px-3 py-1 text-xs font-bold">
                   {language === 'hebrew' ? 'פרימיום' : 'Premium'}
                 </div>
@@ -899,24 +900,24 @@ function HomePage() {
 
 
         {/* Stats Section */}
-        <section className="py-20 bg-gradient-to-r from-emerald-600 to-teal-600">
+        <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-r from-emerald-600 to-teal-600">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 text-center">
               <div className="text-white">
-                <div className="text-5xl font-bold mb-2">15K+</div>
-                <div className="text-xl opacity-90">{t.stats.users}</div>
+                <div className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2">15K+</div>
+                <div className="text-sm sm:text-base md:text-xl opacity-90">{t.stats.users}</div>
               </div>
               <div className="text-white">
-                <div className="text-5xl font-bold mb-2">98%</div>
-                <div className="text-xl opacity-90">{t.stats.success}</div>
+                <div className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2">98%</div>
+                <div className="text-sm sm:text-base md:text-xl opacity-90">{t.stats.success}</div>
               </div>
               <div className="text-white">
-                <div className="text-5xl font-bold mb-2">24/7</div>
-                <div className="text-xl opacity-90">{t.stats.support}</div>
+                <div className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2">24/7</div>
+                <div className="text-sm sm:text-base md:text-xl opacity-90">{t.stats.support}</div>
               </div>
               <div className="text-white">
-                <div className="text-5xl font-bold mb-2">50+</div>
-                <div className="text-xl opacity-90">{t.stats.experts}</div>
+                <div className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2">50+</div>
+                <div className="text-sm sm:text-base md:text-xl opacity-90">{t.stats.experts}</div>
               </div>
             </div>
           </div>
@@ -1456,14 +1457,14 @@ function HomePage() {
         </section>
 
         {/* Contact Section */}
-        <section className={`py-20 ${themeClasses.bgSecondary}`}>
+        <section className={`py-12 sm:py-16 md:py-20 ${themeClasses.bgSecondary}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h3 className={`text-4xl font-bold ${themeClasses.textPrimary} mb-4`}>{t.contact.title}</h3>
-              <p className={`text-xl ${themeClasses.textSecondary}`}>{t.contact.subtitle}</p>
+            <div className="text-center mb-8 sm:mb-12 md:mb-16">
+              <h3 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${themeClasses.textPrimary} mb-3 sm:mb-4`}>{t.contact.title}</h3>
+              <p className={`text-base sm:text-lg md:text-xl ${themeClasses.textSecondary} px-2`}>{t.contact.subtitle}</p>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10 md:gap-12">
               <div>
                 <h4 className={`text-2xl font-bold ${themeClasses.textPrimary} mb-6`}>{t.contact.form.title}</h4>
                 <form className="space-y-6" onSubmit={handleContactSubmit}>
@@ -1589,25 +1590,37 @@ function HomePage() {
       </main>
 
       {/* Footer */}
-      <footer className={`${themeClasses.footerBg} text-white py-12`}>
+      <footer className={`${themeClasses.footerBg} text-white py-8 sm:py-10 md:py-12`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex space-x-8 space-x-reverse mb-4 md:mb-0">
-              <a 
-                href="#privacy" 
-                className="text-gray-300 hover:text-white transition-colors duration-300"
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 md:gap-8 mb-4 md:mb-0 text-center sm:text-left">
+              <Link 
+                to="/privacy-policy" 
+                className="text-gray-300 hover:text-white transition-colors duration-300 text-sm sm:text-base"
               >
                 {t.footer.privacy}
-              </a>
-              <a 
-                href="#terms" 
-                className="text-gray-300 hover:text-white transition-colors duration-300"
+              </Link>
+              <Link 
+                to="/terms" 
+                className="text-gray-300 hover:text-white transition-colors duration-300 text-sm sm:text-base"
               >
                 {t.footer.terms}
-              </a>
+              </Link>
+              <button
+                onClick={() => {
+                  try {
+                    CookieConsent.showPreferences();
+                  } catch (error) {
+                    console.error('Cookie consent error:', error);
+                  }
+                }}
+                className="text-gray-300 hover:text-white transition-colors duration-300 cursor-pointer text-sm sm:text-base"
+              >
+                {language === 'hebrew' ? 'הגדרות עוגיות' : 'Cookie Settings'}
+              </button>
             </div>
-            <div className="text-gray-400">
-              <p>{t.footer.copyright}</p>
+            <div className="text-gray-400 text-center">
+              <p className="text-xs sm:text-sm">{t.footer.copyright}</p>
             </div>
           </div>
         </div>

@@ -31,7 +31,8 @@ const ProfilePage = () => {
     userCode: '',
     region: '',
     city: '',
-    timezone: ''
+    timezone: '',
+    userLanguage: ''
   });
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
@@ -109,6 +110,26 @@ const ProfilePage = () => {
     }
   }, [user, profileData.userCode]);
 
+  // Sync web language with user's preferred language
+  useEffect(() => {
+    if (profileData.userLanguage) {
+      // Map language codes to web language
+      const languageMap = {
+        'en': 'english',
+        'he': 'hebrew',
+        'english': 'english',
+        'hebrew': 'hebrew'
+      };
+      
+      const webLanguage = languageMap[profileData.userLanguage.toLowerCase()] || 'english';
+      
+      // Only change if different from current language
+      if (language !== webLanguage) {
+        toggleLanguage();
+      }
+    }
+  }, [profileData.userLanguage]);
+
   const loadProfileData = async () => {
     try {
       // Only log in development
@@ -157,8 +178,26 @@ const ProfilePage = () => {
           userCode: data.user_code || '',
           region: data.region || '',
           city: data.city || '',
-          timezone: data.timezone || ''
+          timezone: data.timezone || '',
+          userLanguage: data.user_language || ''
         });
+
+        // Sync web language immediately after loading profile
+        if (data.user_language) {
+          const languageMap = {
+            'en': 'english',
+            'he': 'hebrew',
+            'english': 'english',
+            'hebrew': 'hebrew'
+          };
+          
+          const webLanguage = languageMap[data.user_language.toLowerCase()] || 'english';
+          
+          // Only change if different from current language
+          if (language !== webLanguage) {
+            toggleLanguage();
+          }
+        }
       } else {
         if (process.env.NODE_ENV === 'development') {
           console.log('No profile data found, initializing with user metadata');
@@ -228,6 +267,7 @@ const ProfilePage = () => {
         region: profileData.region?.trim() || null,
         city: profileData.city?.trim() || null,
         timezone: profileData.timezone || null,
+        user_language: profileData.userLanguage || null,
         updated_at: new Date().toISOString()
       };
 
@@ -265,6 +305,7 @@ const ProfilePage = () => {
             region: dataToSave.region,
             city: dataToSave.city,
             timezone: dataToSave.timezone,
+            user_language: dataToSave.user_language,
             updated_at: dataToSave.updated_at
           })
           .eq('user_id', user.id)
@@ -331,6 +372,7 @@ const ProfilePage = () => {
                 food_allergies: dataToSave.food_allergies,
                 food_limitations: dataToSave.dietary_preferences, // Map dietary_preferences to food_limitations
                 medical_conditions: dataToSave.medical_conditions,
+                language: dataToSave.user_language, // Map user_language to language
                 updated_at: dataToSave.updated_at
               };
 
@@ -384,6 +426,23 @@ const ProfilePage = () => {
         const calculatedAge = calculateAge(value);
         if (calculatedAge) {
           newData.age = calculatedAge.toString();
+        }
+      }
+      
+      // Sync web language when user changes preferred language
+      if (field === 'userLanguage' && value) {
+        const languageMap = {
+          'en': 'english',
+          'he': 'hebrew',
+          'english': 'english',
+          'hebrew': 'hebrew'
+        };
+        
+        const webLanguage = languageMap[value.toLowerCase()] || 'english';
+        
+        // Only change if different from current language
+        if (language !== webLanguage) {
+          toggleLanguage();
         }
       }
       
@@ -444,9 +503,9 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className={`min-h-screen ${themeClasses.bgPrimary} flex language-transition language-text-transition`} dir={direction}>
-      {/* Sidebar Navigation */}
-      <div className={`w-80 ${themeClasses.bgCard} ${themeClasses.shadowCard} border-r ${themeClasses.borderPrimary}`}>
+    <div className={`min-h-screen ${themeClasses.bgPrimary} flex flex-col lg:flex-row language-transition language-text-transition`} dir={direction}>
+      {/* Sidebar Navigation - Desktop */}
+      <div className={`hidden lg:block lg:w-80 ${themeClasses.bgCard} ${themeClasses.shadowCard} border-r ${themeClasses.borderPrimary}`}>
         {/* Header */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center mb-4">
@@ -557,8 +616,79 @@ const ProfilePage = () => {
         </div>
       </div>
 
+      {/* Mobile Header - Shows on mobile only */}
+      <div className={`lg:hidden ${themeClasses.bgCard} ${themeClasses.shadowCard} border-b ${themeClasses.borderPrimary} p-4`}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <img src="/favicon.ico" alt="BetterChoice Logo" className="w-10 h-10 mr-3 rounded-lg shadow-md" />
+            <div>
+              <h1 className={`${themeClasses.textPrimary} text-lg font-bold`}>BetterChoice</h1>
+              <p className={`${themeClasses.textSecondary} text-xs`}>{t.profile.title}</p>
+            </div>
+          </div>
+          
+          <Link 
+            to="/"
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg ${themeClasses.bgSecondary} ${themeClasses.textPrimary} text-sm`}
+          >
+            <span>🏠</span>
+            <span className="hidden sm:inline">{language === 'hebrew' ? 'בית' : 'Home'}</span>
+          </Link>
+        </div>
+
+        {/* Mobile Tab Navigation - Horizontal Scroll */}
+        <div className="overflow-x-auto -mx-4 px-4">
+          <div className="flex gap-2 min-w-max pb-2">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-all duration-200 ${
+                  activeTab === tab.id
+                    ? 'bg-emerald-500 text-white shadow-md'
+                    : `${themeClasses.bgSecondary} ${themeClasses.textSecondary}`
+                }`}
+              >
+                <span className="text-lg">{tab.icon}</span>
+                <span className="text-sm font-medium">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Theme and Language Controls - Mobile */}
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <button 
+            onClick={toggleLanguage}
+            className={`${themeClasses.bgSecondary} hover:${themeClasses.bgPrimary} rounded-lg p-2 transition-all duration-200`}
+          >
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clipRule="evenodd"/>
+              </svg>
+              <span className="text-blue-400 text-xs font-medium">{language === 'hebrew' ? 'עב' : 'En'}</span>
+            </div>
+          </button>
+
+          <button 
+            onClick={toggleTheme}
+            className={`${themeClasses.bgCard} border border-emerald-500/20 rounded-full p-2 hover:${themeClasses.bgSecondary} transition-all duration-200`}
+          >
+            {isDarkMode ? (
+              <svg className="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd"/>
+              </svg>
+            ) : (
+              <svg className="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+              </svg>
+            )}
+          </button>
+        </div>
+      </div>
+
       {/* Main Content */}
-      <div className="flex-1 p-8">
+      <div className="flex-1 p-4 sm:p-6 md:p-8">
         <div className={`${themeClasses.bgCard} ${themeClasses.shadowCard} rounded-lg p-6 h-full language-transition language-text-transition`}>
           {activeTab === 'profile' && (
             <ProfileTab
@@ -601,42 +731,42 @@ const ProfilePage = () => {
 // Profile Tab Component
 const ProfileTab = ({ profileData, onInputChange, onSave, isSaving, saveStatus, errorMessage, themeClasses, t }) => {
   return (
-    <div className={`${themeClasses.bgPrimary} min-h-screen p-8 animate-fadeIn`}>
+    <div className={`${themeClasses.bgPrimary} min-h-screen p-4 sm:p-6 md:p-8 animate-fadeIn`}>
       {/* Header Section */}
-      <div className="mb-12 animate-slideInUp">
-        <div className="flex items-center mb-8">
-          <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-indigo-500/25 animate-pulse">
-            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+      <div className="mb-8 sm:mb-10 md:mb-12 animate-slideInUp">
+        <div className="flex items-center mb-6 sm:mb-8">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-lg shadow-indigo-500/25 animate-pulse">
+            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"/>
             </svg>
           </div>
     <div>
-            <h2 className="text-white text-3xl font-bold tracking-tight">{t.profile.profileTab.title}</h2>
-            <p className="text-slate-400 text-base mt-1">{t.profile.profileTab.subtitle}</p>
+            <h2 className="text-white text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">{t.profile.profileTab.title}</h2>
+            <p className="text-slate-400 text-sm sm:text-base mt-1">{t.profile.profileTab.subtitle}</p>
           </div>
         </div>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-6 sm:space-y-8">
         {/* Personal Information */}
-        <div className={`${themeClasses.bgCard} border border-indigo-500/30 rounded-2xl p-8 shadow-xl shadow-indigo-500/10 transform hover:scale-[1.01] transition-all duration-300 animate-slideInUp`} style={{ animationDelay: '0.2s' }}>
-          <div className="flex items-center mb-8">
-            <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-indigo-500/25">
-              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+        <div className={`${themeClasses.bgCard} border border-indigo-500/30 rounded-2xl p-4 sm:p-6 md:p-8 shadow-xl shadow-indigo-500/10 transform hover:scale-[1.01] transition-all duration-300 animate-slideInUp`} style={{ animationDelay: '0.2s' }}>
+          <div className="flex items-center mb-6 sm:mb-8">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-lg shadow-indigo-500/25">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"/>
               </svg>
             </div>
             <div>
-              <h3 className={`${themeClasses.textPrimary} text-xl font-bold tracking-tight`}>
+              <h3 className={`${themeClasses.textPrimary} text-lg sm:text-xl font-bold tracking-tight`}>
                 {t.profile.profileTab.personalInfo}
               </h3>
-              <p className={`${themeClasses.textSecondary} text-sm mt-1`}>
+              <p className={`${themeClasses.textSecondary} text-xs sm:text-sm mt-1`}>
                 Your basic personal details
               </p>
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <div>
               <label className={`${themeClasses.textSecondary} block text-sm font-semibold mb-2`}>
                 {t.profile.profileTab.firstName} *
@@ -767,22 +897,22 @@ const ProfileTab = ({ profileData, onInputChange, onSave, isSaving, saveStatus, 
         </div>
 
         {/* Location Information */}
-        <div className={`${themeClasses.bgSecondary} rounded-xl p-6 border-l-4 border-purple-500`}>
-          <div className="flex items-center mb-6">
-            <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center mr-3">
-              <span className="text-purple-600 dark:text-purple-400 text-lg">📍</span>
+        <div className={`${themeClasses.bgSecondary} rounded-xl p-4 sm:p-6 border-l-4 border-purple-500`}>
+          <div className="flex items-center mb-4 sm:mb-6">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center mr-3">
+              <span className="text-purple-600 dark:text-purple-400 text-base sm:text-lg">📍</span>
             </div>
             <div>
-              <h3 className={`${themeClasses.textPrimary} text-xl font-bold`}>
+              <h3 className={`${themeClasses.textPrimary} text-lg sm:text-xl font-bold`}>
                 Location Information
               </h3>
-              <p className={`${themeClasses.textSecondary} text-sm`}>
+              <p className={`${themeClasses.textSecondary} text-xs sm:text-sm`}>
                 Help us provide location-specific recommendations
               </p>
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
             <div>
               <label className={`${themeClasses.textSecondary} block text-sm font-semibold mb-2`}>
                 Region
@@ -881,25 +1011,54 @@ const ProfileTab = ({ profileData, onInputChange, onSave, isSaving, saveStatus, 
               </select>
             </div>
           </div>
+
+          {/* Preferred Language */}
+          <div className="mt-6">
+            <label className={`${themeClasses.textSecondary} block text-sm font-semibold mb-2`}>
+              Preferred Language
+            </label>
+            <select
+              value={profileData.userLanguage}
+              onChange={(e) => onInputChange('userLanguage', e.target.value)}
+              className={`w-full px-4 py-3 rounded-lg border-2 transition-all ${themeClasses.inputBg} ${themeClasses.inputFocus} ${themeClasses.textPrimary} focus:border-purple-500 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-800`}
+            >
+              <option value="">Select Language</option>
+              <option value="en">English</option>
+              <option value="he">עברית (Hebrew)</option>
+              <option value="es">Español (Spanish)</option>
+              <option value="fr">Français (French)</option>
+              <option value="de">Deutsch (German)</option>
+              <option value="it">Italiano (Italian)</option>
+              <option value="pt">Português (Portuguese)</option>
+              <option value="ru">Русский (Russian)</option>
+              <option value="ar">العربية (Arabic)</option>
+              <option value="zh">中文 (Chinese)</option>
+              <option value="ja">日本語 (Japanese)</option>
+              <option value="ko">한국어 (Korean)</option>
+            </select>
+            <p className={`${themeClasses.textMuted} text-xs mt-1`}>
+              This will be used for chat interactions and meal plan communications
+            </p>
+          </div>
         </div>
 
         {/* Health Information */}
-        <div className={`${themeClasses.bgSecondary} rounded-xl p-6 border-l-4 border-emerald-500`}>
-          <div className="flex items-center mb-6">
-            <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900 rounded-lg flex items-center justify-center mr-3">
-              <span className="text-emerald-600 dark:text-emerald-400 text-lg">🏥</span>
+        <div className={`${themeClasses.bgSecondary} rounded-xl p-4 sm:p-6 border-l-4 border-emerald-500`}>
+          <div className="flex items-center mb-4 sm:mb-6">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-100 dark:bg-emerald-900 rounded-lg flex items-center justify-center mr-3">
+              <span className="text-emerald-600 dark:text-emerald-400 text-base sm:text-lg">🏥</span>
             </div>
             <div>
-              <h3 className={`${themeClasses.textPrimary} text-xl font-bold`}>
+              <h3 className={`${themeClasses.textPrimary} text-lg sm:text-xl font-bold`}>
                 Health Information
               </h3>
-              <p className={`${themeClasses.textSecondary} text-sm`}>
+              <p className={`${themeClasses.textSecondary} text-xs sm:text-sm`}>
                 Optional - provide your health details if relevant
               </p>
             </div>
           </div>
           
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <div>
               <label className={`${themeClasses.textSecondary} block text-sm font-semibold mb-3`}>
                 Dietary Preferences
@@ -944,11 +1103,11 @@ const ProfileTab = ({ profileData, onInputChange, onSave, isSaving, saveStatus, 
       </div>
 
       {/* Save Button */}
-      <div className="mt-8 flex justify-end">
+      <div className="mt-6 sm:mt-8 flex justify-end">
         <button
           onClick={onSave}
           disabled={isSaving}
-          className={`px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 transform hover:scale-105 ${
+          className={`w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg transition-all duration-200 transform hover:scale-105 ${
             isSaving
               ? 'bg-gray-400 cursor-not-allowed'
               : 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-lg hover:shadow-xl'
@@ -1147,138 +1306,138 @@ const MyPlanTab = ({ themeClasses, t, userCode, language }) => {
   };
 
   return (
-    <div className={`${themeClasses.bgPrimary} min-h-screen p-8 animate-fadeIn`}>
+    <div className={`${themeClasses.bgPrimary} min-h-screen p-4 sm:p-6 md:p-8 animate-fadeIn`}>
       {/* Daily Summary Section */}
-      <div className="mb-12 animate-slideInUp">
-        <div className="flex items-center mb-8">
-          <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-emerald-500/25 animate-pulse">
-            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+      <div className="mb-6 sm:mb-8 md:mb-10 lg:mb-12 animate-slideInUp">
+        <div className="flex items-center mb-4 sm:mb-6 md:mb-8">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-lg shadow-emerald-500/25 animate-pulse">
+            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
               <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
             </svg>
           </div>
           <div>
-            <h2 className={`${themeClasses.textPrimary} text-3xl font-bold tracking-tight`}>
+            <h2 className={`${themeClasses.textPrimary} text-xl sm:text-2xl md:text-3xl font-bold tracking-tight`}>
               {language === 'hebrew' ? 'סיכום יומי' : 'Daily Summary'}
             </h2>
-            <p className={`${themeClasses.textSecondary} text-base mt-1`}>
+            <p className={`${themeClasses.textSecondary} text-sm sm:text-base mt-0.5 sm:mt-1`}>
               {language === 'hebrew' ? 'סה"כ ארוחות מתוכננות' : 'Total planned meals'}
             </p>
           </div>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
           {/* Total Calories Card */}
-          <div className="bg-gradient-to-br from-teal-600 to-teal-700 rounded-2xl p-8 shadow-xl shadow-teal-500/20 transform hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-teal-500/30 animate-bounceIn">
-            <div className="text-white text-5xl font-bold tracking-tight animate-countUp">{planData.totals.calories.toLocaleString()}</div>
-            <div className="text-teal-100 text-lg font-semibold mt-2">
+          <div className="bg-gradient-to-br from-teal-600 to-teal-700 rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 shadow-xl shadow-teal-500/20 transform hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-teal-500/30 animate-bounceIn text-center sm:text-left">
+            <div className="text-white text-4xl sm:text-4xl md:text-5xl font-bold tracking-tight animate-countUp">{planData.totals.calories.toLocaleString()}</div>
+            <div className="text-teal-100 text-base sm:text-lg font-semibold mt-1 sm:mt-2">
               {language === 'hebrew' ? 'קלוריות' : 'Calories'}
             </div>
           </div>
 
           {/* Protein Card */}
-          <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-2xl p-6 shadow-xl shadow-red-500/20 transform hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/30 animate-bounceIn" style={{ animationDelay: '0.1s' }}>
-            <div className="text-white text-4xl font-bold tracking-tight">{planData.totals.protein}g</div>
-            <div className="text-red-100 text-lg font-semibold mt-1">
+          <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-xl shadow-red-500/20 transform hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/30 animate-bounceIn text-center sm:text-left" style={{ animationDelay: '0.1s' }}>
+            <div className="text-white text-3xl sm:text-3xl md:text-4xl font-bold tracking-tight">{planData.totals.protein}g</div>
+            <div className="text-red-100 text-base sm:text-lg font-semibold mt-1">
               {language === 'hebrew' ? 'חלבון' : 'Protein'}
             </div>
-            <div className="text-red-200 text-sm mt-2">
+            <div className="text-red-200 text-xs sm:text-sm mt-1 sm:mt-2">
               {proteinPercentage}% {language === 'hebrew' ? 'מהמקרו' : 'of macros'}
             </div>
           </div>
 
           {/* Carbs Card */}
-          <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-6 shadow-xl shadow-blue-500/20 transform hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/30 animate-bounceIn" style={{ animationDelay: '0.2s' }}>
-            <div className="text-white text-4xl font-bold tracking-tight">{planData.totals.carbs}g</div>
-            <div className="text-blue-100 text-lg font-semibold mt-1">
+          <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-xl shadow-blue-500/20 transform hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/30 animate-bounceIn text-center sm:text-left" style={{ animationDelay: '0.2s' }}>
+            <div className="text-white text-3xl sm:text-3xl md:text-4xl font-bold tracking-tight">{planData.totals.carbs}g</div>
+            <div className="text-blue-100 text-base sm:text-lg font-semibold mt-1">
               {language === 'hebrew' ? 'פחמימות' : 'Carbs'}
             </div>
-            <div className="text-blue-200 text-sm mt-2">
+            <div className="text-blue-200 text-xs sm:text-sm mt-1 sm:mt-2">
               {carbsPercentage}% {language === 'hebrew' ? 'מהמקרו' : 'of macros'}
             </div>
           </div>
 
           {/* Fat Card */}
-          <div className="bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl p-6 shadow-xl shadow-amber-500/20 transform hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/30 animate-bounceIn" style={{ animationDelay: '0.3s' }}>
-            <div className="text-white text-4xl font-bold tracking-tight">{planData.totals.fat}g</div>
-            <div className="text-amber-100 text-lg font-semibold mt-1">
+          <div className="bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl sm:rounded-2xl p-5 sm:p-6 shadow-xl shadow-amber-500/20 transform hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/30 animate-bounceIn text-center sm:text-left" style={{ animationDelay: '0.3s' }}>
+            <div className="text-white text-3xl sm:text-3xl md:text-4xl font-bold tracking-tight">{planData.totals.fat}g</div>
+            <div className="text-amber-100 text-base sm:text-lg font-semibold mt-1">
               {language === 'hebrew' ? 'שומן' : 'Fat'}
             </div>
-            <div className="text-amber-200 text-sm mt-2">
+            <div className="text-amber-200 text-xs sm:text-sm mt-1 sm:mt-2">
               {fatPercentage}% {language === 'hebrew' ? 'מהמקרו' : 'of macros'}
             </div>
           </div>
         </div>
 
         {/* Macro Distribution Bar */}
-        <div className="mb-12 animate-slideInUp" style={{ animationDelay: '0.4s' }}>
-          <div className="flex items-center justify-between mb-4">
-            <span className={`${themeClasses.textPrimary} text-xl font-semibold tracking-tight`}>
+        <div className="animate-slideInUp" style={{ animationDelay: '0.4s' }}>
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <span className={`${themeClasses.textPrimary} text-base sm:text-lg md:text-xl font-semibold tracking-tight`}>
               {language === 'hebrew' ? 'התפלגות מקרו' : 'Macro Distribution'}
             </span>
-            <span className={`${themeClasses.textSecondary} text-sm font-medium`}>
+            <span className={`${themeClasses.textSecondary} text-xs sm:text-sm font-medium`}>
               {language === 'hebrew' ? 'מקרו' : 'macros'}
             </span>
           </div>
           
           {/* Progress Bar */}
-          <div className={`${themeClasses.bgCard} rounded-2xl p-6 shadow-lg`}>
-            <div className="flex h-8 rounded-xl overflow-hidden shadow-inner">
+          <div className={`${themeClasses.bgCard} rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg`}>
+            <div className="flex h-8 sm:h-10 rounded-lg sm:rounded-xl overflow-hidden shadow-inner">
               <div 
-                className="bg-gradient-to-r from-red-600 to-red-500 flex items-center justify-center text-white text-sm font-semibold transition-all duration-1000 ease-out animate-progressBar"
+                className="bg-gradient-to-r from-red-600 to-red-500 flex items-center justify-center text-white text-xs sm:text-sm font-semibold transition-all duration-1000 ease-out animate-progressBar"
                 style={{ width: `${proteinPercentage}%` }}
               >
-                {proteinPercentage > 8 && (
+                {proteinPercentage > 15 && (
                   <div className="flex items-center">
-                    <div className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></div>
-                    {language === 'hebrew' ? 'חלבון' : 'Protein'} {proteinPercentage}%
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full mr-1 sm:mr-2 animate-pulse"></div>
+                    <span className="hidden sm:inline">{language === 'hebrew' ? 'חלבון' : 'Protein'} </span>{proteinPercentage}%
                   </div>
                 )}
               </div>
               <div 
-                className="bg-gradient-to-r from-blue-600 to-blue-500 flex items-center justify-center text-white text-sm font-semibold transition-all duration-1000 ease-out animate-progressBar"
+                className="bg-gradient-to-r from-blue-600 to-blue-500 flex items-center justify-center text-white text-xs sm:text-sm font-semibold transition-all duration-1000 ease-out animate-progressBar"
                 style={{ width: `${carbsPercentage}%` }}
               >
-                {carbsPercentage > 8 && (
+                {carbsPercentage > 15 && (
                   <div className="flex items-center">
-                    <div className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></div>
-                    {language === 'hebrew' ? 'פחמימות' : 'Carbs'} {carbsPercentage}%
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full mr-1 sm:mr-2 animate-pulse"></div>
+                    <span className="hidden sm:inline">{language === 'hebrew' ? 'פחמימות' : 'Carbs'} </span>{carbsPercentage}%
                   </div>
                 )}
               </div>
               <div 
-                className="bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center text-white text-sm font-semibold transition-all duration-1000 ease-out animate-progressBar"
+                className="bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center text-white text-xs sm:text-sm font-semibold transition-all duration-1000 ease-out animate-progressBar"
                 style={{ width: `${fatPercentage}%` }}
               >
-                {fatPercentage > 8 && (
+                {fatPercentage > 15 && (
                   <div className="flex items-center">
-                    <div className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></div>
-                    {language === 'hebrew' ? 'שומן' : 'Fat'} {fatPercentage}%
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full mr-1 sm:mr-2 animate-pulse"></div>
+                    <span className="hidden sm:inline">{language === 'hebrew' ? 'שומן' : 'Fat'} </span>{fatPercentage}%
                   </div>
                 )}
               </div>
-      </div>
+            </div>
 
             {/* Labels Below */}
-            <div className="flex justify-between mt-4">
+            <div className="flex flex-col sm:flex-row justify-between gap-2 sm:gap-0 mt-3 sm:mt-4">
               <div className="flex items-center">
-                <div className="w-3 h-3 bg-red-500 rounded-full mr-2 animate-pulse"></div>
-                <span className={`${themeClasses.textPrimary} text-sm font-medium`}>
+                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-red-500 rounded-full mr-2 animate-pulse"></div>
+                <span className={`${themeClasses.textPrimary} text-xs sm:text-sm font-medium`}>
                   {language === 'hebrew' ? 'חלבון' : 'Protein'} {proteinPercentage}%
                 </span>
-        </div>
+              </div>
               <div className="flex items-center">
-                <div className="w-3 h-3 bg-blue-500 rounded-full mr-2 animate-pulse"></div>
-                <span className={`${themeClasses.textPrimary} text-sm font-medium`}>
+                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-blue-500 rounded-full mr-2 animate-pulse"></div>
+                <span className={`${themeClasses.textPrimary} text-xs sm:text-sm font-medium`}>
                   {language === 'hebrew' ? 'פחמימות' : 'Carbs'} {carbsPercentage}%
                 </span>
-        </div>
+              </div>
               <div className="flex items-center">
-                <div className="w-3 h-3 bg-amber-500 rounded-full mr-2 animate-pulse"></div>
-                <span className={`${themeClasses.textPrimary} text-sm font-medium`}>
+                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-amber-500 rounded-full mr-2 animate-pulse"></div>
+                <span className={`${themeClasses.textPrimary} text-xs sm:text-sm font-medium`}>
                   {language === 'hebrew' ? 'שומן' : 'Fat'} {fatPercentage}%
                 </span>
-        </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1286,24 +1445,24 @@ const MyPlanTab = ({ themeClasses, t, userCode, language }) => {
 
       {/* Today Section */}
       <div className="animate-slideInUp" style={{ animationDelay: '0.5s' }}>
-         <div className="flex items-center mb-8">
-          <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-emerald-500/25 animate-pulse">
-            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+         <div className="flex items-center mb-6 sm:mb-8">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-lg shadow-emerald-500/25 animate-pulse">
+            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
             </svg>
           </div>
       <div>
-            <h3 className={`${themeClasses.textPrimary} text-3xl font-bold tracking-tight`}>
+            <h3 className={`${themeClasses.textPrimary} text-2xl sm:text-3xl font-bold tracking-tight`}>
               {language === 'hebrew' ? 'היום' : 'Today'}
             </h3>
-            <p className={`${themeClasses.textSecondary} text-base mt-1`}>
+            <p className={`${themeClasses.textSecondary} text-sm sm:text-base mt-1`}>
               {planData.meals.length} {language === 'hebrew' ? 'ארוחות מתוכננות' : 'meals planned'}
             </p>
           </div>
         </div>
 
         {/* Meals */}
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {planData.meals.map((meal, index) => {
             const mealCalories = meal.main.nutrition?.calories || meal.main.calories || 0;
             const mealProtein = meal.main.nutrition?.protein || meal.main.protein || 0;
@@ -1324,29 +1483,29 @@ const MyPlanTab = ({ themeClasses, t, userCode, language }) => {
             return (
               <div 
                 key={index} 
-                className={`${themeClasses.bgCard} border border-emerald-500/30 rounded-2xl p-8 shadow-xl shadow-emerald-500/10 transform hover:scale-[1.02] transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-500/20 animate-slideInUp`}
+                className={`${themeClasses.bgCard} border border-emerald-500/30 rounded-2xl p-4 sm:p-6 md:p-8 shadow-xl shadow-emerald-500/10 transform hover:scale-[1.02] transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-500/20 animate-slideInUp`}
                 style={{ animationDelay: `${0.6 + index * 0.1}s` }}
               >
                 {/* Meal Header */}
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3">
                   <div className="flex items-center">
-                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-emerald-500/25">
-                      <span className="text-2xl animate-bounce" style={{ animationDelay: `${index * 0.2}s` }}>{getMealIcon(meal.meal)}</span>
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-lg shadow-emerald-500/25">
+                      <span className="text-xl sm:text-2xl animate-bounce" style={{ animationDelay: `${index * 0.2}s` }}>{getMealIcon(meal.meal)}</span>
                   </div>
                     <div>
-                      <h4 className={`${themeClasses.textPrimary} text-xl font-bold tracking-tight`}>
+                      <h4 className={`${themeClasses.textPrimary} text-base sm:text-lg md:text-xl font-bold tracking-tight`}>
                         {language === 'hebrew' ? 'ארוחה:' : 'Meal:'} {meal.meal}
                       </h4>
-                      <p className={`${getMealColor(meal.meal)} text-base font-semibold mt-1`}>{meal.meal}</p>
+                      <p className={`${getMealColor(meal.meal)} text-sm sm:text-base font-semibold mt-0.5 sm:mt-1`}>{meal.meal}</p>
                     </div>
                     </div>
-                  <div className="flex items-center gap-4">
-                    <button className="w-12 h-12 bg-slate-700 rounded-xl flex items-center justify-center hover:bg-slate-600 transition-all duration-300 hover:scale-110 hover:shadow-lg shadow-md">
-                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex items-center gap-2 sm:gap-4 self-end sm:self-auto">
+                    <button className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-700 rounded-xl flex items-center justify-center hover:bg-slate-600 transition-all duration-300 hover:scale-110 hover:shadow-lg shadow-md">
+                      <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
                     </button>
-                    <span className={`${themeClasses.textSecondary} text-sm font-medium`}>
+                    <span className={`${themeClasses.textSecondary} text-xs sm:text-sm font-medium hidden sm:inline`}>
                       {language === 'hebrew' ? 'החלף' : 'Replace'}
                     </span>
                     <button 
@@ -1366,15 +1525,17 @@ const MyPlanTab = ({ themeClasses, t, userCode, language }) => {
                 </div>
 
                 {/* Nutritional Summary */}
-                <div className="mb-6">
-                  <div className="flex items-center gap-6">
-                    <div className="text-emerald-400 text-4xl font-bold tracking-tight animate-countUp">{mealCalories}</div>
-                    <div className={`${themeClasses.textPrimary} text-base`}>
-                      <span className="font-semibold">{mealProtein}g {language === 'hebrew' ? 'חלבון' : 'Protein'}</span>
-                      <span className={`mx-3 ${themeClasses.textMuted}`}>•</span>
-                      <span className="font-semibold">{mealCarbs}g {language === 'hebrew' ? 'פחמימות' : 'Carbs'}</span>
-                      <span className={`mx-3 ${themeClasses.textMuted}`}>•</span>
-                      <span className="font-semibold">{mealFat}g {language === 'hebrew' ? 'שומן' : 'Fat'}</span>
+                <div className="mb-4 sm:mb-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+                    <div className="text-emerald-400 text-3xl sm:text-4xl font-bold tracking-tight animate-countUp">{mealCalories}</div>
+                    <div className={`${themeClasses.textPrimary} text-sm sm:text-base`}>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1">
+                        <span className="font-semibold whitespace-nowrap">{mealProtein}g {language === 'hebrew' ? 'חלבון' : 'Protein'}</span>
+                        <span className={`${themeClasses.textMuted} hidden sm:inline`}>•</span>
+                        <span className="font-semibold whitespace-nowrap">{mealCarbs}g {language === 'hebrew' ? 'פחמימות' : 'Carbs'}</span>
+                        <span className={`${themeClasses.textMuted} hidden sm:inline`}>•</span>
+                        <span className="font-semibold whitespace-nowrap">{mealFat}g {language === 'hebrew' ? 'שומן' : 'Fat'}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1382,98 +1543,98 @@ const MyPlanTab = ({ themeClasses, t, userCode, language }) => {
                 {/* Collapsible Content */}
                 <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
                   {/* Macro Breakdown Bars */}
-                  <div className="space-y-4 mb-8">
-                    <div className="flex items-center">
-                      <div className="w-4 h-4 bg-red-500 rounded-full mr-4 animate-pulse"></div>
-                      <span className={`${themeClasses.textPrimary} text-base font-semibold mr-4 w-16`}>
+                  <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
+                    <div className="flex items-center gap-2 sm:gap-0">
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-red-500 rounded-full sm:mr-4 animate-pulse"></div>
+                      <span className={`${themeClasses.textPrimary} text-sm sm:text-base font-semibold sm:mr-4 w-12 sm:w-16`}>
                         {language === 'hebrew' ? 'חלבון' : 'Protein'}
                       </span>
-                      <div className="flex-1 bg-slate-700 rounded-full h-3 shadow-inner">
+                      <div className="flex-1 bg-slate-700 rounded-full h-2 sm:h-3 shadow-inner">
                         <div 
-                          className="bg-gradient-to-r from-red-600 to-red-500 h-3 rounded-full transition-all duration-1000 ease-out shadow-sm"
+                          className="bg-gradient-to-r from-red-600 to-red-500 h-2 sm:h-3 rounded-full transition-all duration-1000 ease-out shadow-sm"
                           style={{ width: `${mealProteinPercent}%` }}
                         ></div>
                   </div>
-                      <span className={`${themeClasses.textSecondary} text-sm font-medium ml-4`}>{mealProtein}g ({mealProteinPercent}%)</span>
+                      <span className={`${themeClasses.textSecondary} text-xs sm:text-sm font-medium ml-2 sm:ml-4 whitespace-nowrap`}>{mealProtein}g ({mealProteinPercent}%)</span>
                     </div>
-                    <div className="flex items-center">
-                      <div className="w-4 h-4 bg-blue-500 rounded-full mr-4 animate-pulse"></div>
-                      <span className={`${themeClasses.textPrimary} text-base font-semibold mr-4 w-16`}>
+                    <div className="flex items-center gap-2 sm:gap-0">
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 rounded-full sm:mr-4 animate-pulse"></div>
+                      <span className={`${themeClasses.textPrimary} text-sm sm:text-base font-semibold sm:mr-4 w-12 sm:w-16`}>
                         {language === 'hebrew' ? 'פחמימות' : 'Carbs'}
                       </span>
-                      <div className="flex-1 bg-slate-700 rounded-full h-3 shadow-inner">
+                      <div className="flex-1 bg-slate-700 rounded-full h-2 sm:h-3 shadow-inner">
                         <div 
-                          className="bg-gradient-to-r from-blue-600 to-blue-500 h-3 rounded-full transition-all duration-1000 ease-out shadow-sm"
+                          className="bg-gradient-to-r from-blue-600 to-blue-500 h-2 sm:h-3 rounded-full transition-all duration-1000 ease-out shadow-sm"
                           style={{ width: `${mealCarbsPercent}%` }}
                         ></div>
                     </div>
-                      <span className={`${themeClasses.textSecondary} text-sm font-medium ml-4`}>{mealCarbs}g ({mealCarbsPercent}%)</span>
+                      <span className={`${themeClasses.textSecondary} text-xs sm:text-sm font-medium ml-2 sm:ml-4 whitespace-nowrap`}>{mealCarbs}g ({mealCarbsPercent}%)</span>
                     </div>
-                    <div className="flex items-center">
-                      <div className="w-4 h-4 bg-amber-500 rounded-full mr-4 animate-pulse"></div>
-                      <span className={`${themeClasses.textPrimary} text-base font-semibold mr-4 w-16`}>
+                    <div className="flex items-center gap-2 sm:gap-0">
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-amber-500 rounded-full sm:mr-4 animate-pulse"></div>
+                      <span className={`${themeClasses.textPrimary} text-sm sm:text-base font-semibold sm:mr-4 w-12 sm:w-16`}>
                         {language === 'hebrew' ? 'שומן' : 'Fat'}
                       </span>
-                      <div className="flex-1 bg-slate-700 rounded-full h-3 shadow-inner">
+                      <div className="flex-1 bg-slate-700 rounded-full h-2 sm:h-3 shadow-inner">
                         <div 
-                          className="bg-gradient-to-r from-amber-500 to-orange-500 h-3 rounded-full transition-all duration-1000 ease-out shadow-sm"
+                          className="bg-gradient-to-r from-amber-500 to-orange-500 h-2 sm:h-3 rounded-full transition-all duration-1000 ease-out shadow-sm"
                           style={{ width: `${mealFatPercent}%` }}
                         ></div>
                     </div>
-                      <span className={`${themeClasses.textSecondary} text-sm font-medium ml-4`}>{mealFat}g ({mealFatPercent}%)</span>
+                      <span className={`${themeClasses.textSecondary} text-xs sm:text-sm font-medium ml-2 sm:ml-4 whitespace-nowrap`}>{mealFat}g ({mealFatPercent}%)</span>
+                    </div>
                   </div>
-                </div>
 
                   {/* Ingredients */}
-                  <div className={`${themeClasses.bgSecondary} rounded-2xl p-6`}>
-                    <div className="flex items-center mb-4">
-                      <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center mr-3 shadow-lg shadow-emerald-500/25">
-                        <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <div className={`${themeClasses.bgSecondary} rounded-2xl p-4 sm:p-6`}>
+                    <div className="flex items-center mb-3 sm:mb-4">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center mr-2 sm:mr-3 shadow-lg shadow-emerald-500/25">
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/>
                         </svg>
-              </div>
-                      <span className={`${themeClasses.textPrimary} text-lg font-bold tracking-tight`}>
+                      </div>
+                      <span className={`${themeClasses.textPrimary} text-base sm:text-lg font-bold tracking-tight`}>
                         {language === 'hebrew' ? 'מרכיבים' : 'Ingredients'}
                       </span>
-                      <span className={`${themeClasses.textSecondary} text-sm font-medium ml-3`}>
+                      <span className={`${themeClasses.textSecondary} text-xs sm:text-sm font-medium ml-2 sm:ml-3`}>
                         4 {language === 'hebrew' ? 'פריטים' : 'Items'}
                       </span>
-            </div>
+                    </div>
                     
                     {/* Mock ingredients for now - you can replace with actual data */}
-                    <div className="space-y-3">
-                      <div className={`flex items-center ${themeClasses.textSecondary} text-base transform hover:translate-x-2 transition-all duration-300 hover:${themeClasses.textPrimary}`}>
-                        <div className="w-3 h-3 bg-emerald-500 rounded-full mr-4 animate-pulse"></div>
-                        <span className="font-medium">Greek yogurt, plain, 0% fat</span>
-                        <span className="ml-auto mr-3 font-semibold">4 cups</span>
-                        <svg className={`w-5 h-5 ${themeClasses.textMuted}`} fill="currentColor" viewBox="0 0 20 20">
+                    <div className="space-y-2 sm:space-y-3">
+                      <div className={`flex items-start sm:items-center ${themeClasses.textSecondary} text-xs sm:text-sm md:text-base transform hover:translate-x-2 transition-all duration-300 hover:${themeClasses.textPrimary}`}>
+                        <div className="w-2 h-2 sm:w-3 sm:h-3 bg-emerald-500 rounded-full mr-2 sm:mr-4 animate-pulse flex-shrink-0 mt-1.5 sm:mt-0"></div>
+                        <span className="font-medium flex-1">Greek yogurt, plain, 0% fat</span>
+                        <span className="ml-2 font-semibold whitespace-nowrap">4 cups</span>
+                        <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${themeClasses.textMuted} ml-2 sm:ml-3 hidden sm:block flex-shrink-0`} fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM8 15v-3a2 2 0 114 0v3H8z" clipRule="evenodd"/>
                         </svg>
-        </div>
-                      <div className={`flex items-center ${themeClasses.textSecondary} text-base transform hover:translate-x-2 transition-all duration-300 hover:${themeClasses.textPrimary}`}>
-                        <div className="w-3 h-3 bg-emerald-500 rounded-full mr-4 animate-pulse"></div>
-                        <span className="font-medium">Granola, nut-free</span>
-                        <span className="ml-auto mr-3 font-semibold">0.8 cup</span>
-                        <svg className={`w-5 h-5 ${themeClasses.textMuted}`} fill="currentColor" viewBox="0 0 20 20">
+                      </div>
+                      <div className={`flex items-start sm:items-center ${themeClasses.textSecondary} text-xs sm:text-sm md:text-base transform hover:translate-x-2 transition-all duration-300 hover:${themeClasses.textPrimary}`}>
+                        <div className="w-2 h-2 sm:w-3 sm:h-3 bg-emerald-500 rounded-full mr-2 sm:mr-4 animate-pulse flex-shrink-0 mt-1.5 sm:mt-0"></div>
+                        <span className="font-medium flex-1">Granola, nut-free</span>
+                        <span className="ml-2 font-semibold whitespace-nowrap">0.8 cup</span>
+                        <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${themeClasses.textMuted} ml-2 sm:ml-3 hidden sm:block flex-shrink-0`} fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM8 15v-3a2 2 0 114 0v3H8z" clipRule="evenodd"/>
                         </svg>
-      </div>
-                      <div className={`flex items-center ${themeClasses.textSecondary} text-base transform hover:translate-x-2 transition-all duration-300 hover:${themeClasses.textPrimary}`}>
-                        <div className="w-3 h-3 bg-emerald-500 rounded-full mr-4 animate-pulse"></div>
-                        <span className="font-medium">Blueberries</span>
-                        <span className="ml-auto mr-3 font-semibold">2/3 cup</span>
-                        <svg className={`w-5 h-5 ${themeClasses.textMuted}`} fill="currentColor" viewBox="0 0 20 20">
+                      </div>
+                      <div className={`flex items-start sm:items-center ${themeClasses.textSecondary} text-xs sm:text-sm md:text-base transform hover:translate-x-2 transition-all duration-300 hover:${themeClasses.textPrimary}`}>
+                        <div className="w-2 h-2 sm:w-3 sm:h-3 bg-emerald-500 rounded-full mr-2 sm:mr-4 animate-pulse flex-shrink-0 mt-1.5 sm:mt-0"></div>
+                        <span className="font-medium flex-1">Blueberries</span>
+                        <span className="ml-2 font-semibold whitespace-nowrap">2/3 cup</span>
+                        <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${themeClasses.textMuted} ml-2 sm:ml-3 hidden sm:block flex-shrink-0`} fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM8 15v-3a2 2 0 114 0v3H8z" clipRule="evenodd"/>
                         </svg>
-          </div>
-                      <div className={`flex items-center ${themeClasses.textSecondary} text-base transform hover:translate-x-2 transition-all duration-300 hover:${themeClasses.textPrimary}`}>
-                        <div className="w-3 h-3 bg-emerald-500 rounded-full mr-4 animate-pulse"></div>
-                        <span className="font-medium">Canola oil</span>
-                        <span className="ml-auto mr-3 font-semibold">1.5 tbsp</span>
-                        <svg className={`w-5 h-5 ${themeClasses.textMuted}`} fill="currentColor" viewBox="0 0 20 20">
+                      </div>
+                      <div className={`flex items-start sm:items-center ${themeClasses.textSecondary} text-xs sm:text-sm md:text-base transform hover:translate-x-2 transition-all duration-300 hover:${themeClasses.textPrimary}`}>
+                        <div className="w-2 h-2 sm:w-3 sm:h-3 bg-emerald-500 rounded-full mr-2 sm:mr-4 animate-pulse flex-shrink-0 mt-1.5 sm:mt-0"></div>
+                        <span className="font-medium flex-1">Canola oil</span>
+                        <span className="ml-2 font-semibold whitespace-nowrap">1.5 tbsp</span>
+                        <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${themeClasses.textMuted} ml-2 sm:ml-3 hidden sm:block flex-shrink-0`} fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM8 15v-3a2 2 0 114 0v3H8z" clipRule="evenodd"/>
                         </svg>
-        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1648,9 +1809,9 @@ const DailyLogTab = ({ themeClasses, t, userCode, language }) => {
     : ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
   return (
-    <div className={`${themeClasses.bgPrimary} min-h-screen p-8 animate-fadeIn`}>
+    <div className={`${themeClasses.bgPrimary} min-h-screen p-4 sm:p-6 md:p-8 animate-fadeIn`}>
       {/* Date Selector Section */}
-      <div className="mb-12 animate-slideInUp">
+      <div className="mb-8 sm:mb-10 md:mb-12 animate-slideInUp">
         <div className="mb-8">
           <h2 className={`${themeClasses.textPrimary} text-3xl font-bold tracking-tight mb-2`}>
             {dayNames[selectedDateObj.getDay()]}, {monthNames[selectedDateObj.getMonth()]} {selectedDateObj.getDate()}
@@ -1734,7 +1895,7 @@ const DailyLogTab = ({ themeClasses, t, userCode, language }) => {
         </div>
 
         {/* Macro Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {/* Calories Card */}
           <div className={`${themeClasses.bgCard} rounded-2xl p-6 shadow-lg animate-bounceIn`} style={{ animationDelay: '0.4s' }}>
             <div className="flex items-center mb-4">
@@ -2038,9 +2199,9 @@ const PricingTab = ({ themeClasses, user, language }) => {
   const filteredProducts = getFilteredProducts();
 
   return (
-    <div className={`${themeClasses.bgPrimary} min-h-screen p-8 animate-fadeIn`}>
+    <div className={`${themeClasses.bgPrimary} min-h-screen p-4 sm:p-6 md:p-8 animate-fadeIn`}>
       {/* Header */}
-      <div className="mb-12 animate-slideInUp">
+      <div className="mb-8 sm:mb-10 md:mb-12 animate-slideInUp">
         <div className="flex items-center mb-8">
           <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-blue-500/25 animate-pulse">
             <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -2155,7 +2316,7 @@ const PricingTab = ({ themeClasses, user, language }) => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
             {filteredProducts.map((product, index) => (
               <div
                 key={product.id}
@@ -2549,7 +2710,7 @@ const MessagesTab = ({ themeClasses, t, userCode, activeTab, language }) => {
   return (
     <div className={`${themeClasses.bgPrimary} min-h-screen animate-fadeIn`}>
       {/* Header Section */}
-      <div className="p-6 pb-4 animate-slideInUp">
+      <div className="p-4 sm:p-6 pb-4 animate-slideInUp">
         <div className="flex items-center">
           <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-purple-500/25 animate-pulse">
             <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -2566,8 +2727,8 @@ const MessagesTab = ({ themeClasses, t, userCode, activeTab, language }) => {
       {/* Messages */}
       <div 
         ref={setMessagesContainerRef}
-        className={`${themeClasses.bgCard} rounded-t-2xl p-6 h-full overflow-y-auto shadow-xl shadow-purple-500/10 animate-slideInUp`} 
-        style={{ animationDelay: '0.2s', height: 'calc(100vh - 120px)' }}
+        className={`${themeClasses.bgCard} rounded-t-2xl p-4 sm:p-6 h-full overflow-y-auto shadow-xl shadow-purple-500/10 animate-slideInUp`} 
+        style={{ animationDelay: '0.2s', height: 'calc(100vh - 200px)' }}
         onScroll={handleScroll}
       >
         {messages.length === 0 ? (
@@ -2619,7 +2780,7 @@ const MessagesTab = ({ themeClasses, t, userCode, activeTab, language }) => {
                             style={{ animationDelay: `${0.3 + index * 0.1}s` }}
                           >
                             <div
-                              className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-lg ${
+                              className={`max-w-[85%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-lg ${
                                 message.sender === 'user'
                                   ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white'
                                   : `${themeClasses.bgSecondary} ${themeClasses.textPrimary} border ${themeClasses.borderPrimary}`

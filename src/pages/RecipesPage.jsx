@@ -853,20 +853,20 @@ function RecipesPage() {
       {/* Main Content */}
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="py-12 px-4 sm:px-6 lg:px-8">
+        <section className="py-8 sm:py-10 md:py-12 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-8">
-              <h2 className={`text-4xl font-bold ${themeClasses.textPrimary} mb-4`}>
+            <div className="text-center mb-6 sm:mb-8">
+              <h2 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${themeClasses.textPrimary} mb-3 sm:mb-4`}>
                 {tr.title}
               </h2>
-              <p className={`text-xl ${themeClasses.textSecondary} max-w-3xl mx-auto`}>
+              <p className={`text-base sm:text-lg md:text-xl ${themeClasses.textSecondary} max-w-3xl mx-auto px-2`}>
                 {tr.subtitle}
               </p>
             </div>
 
             {/* Search and Filters */}
-            <div className={`${themeClasses.bgCard} rounded-2xl ${themeClasses.shadowCard} p-6 mb-8`}>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className={`${themeClasses.bgCard} rounded-2xl ${themeClasses.shadowCard} p-4 sm:p-6 mb-6 sm:mb-8`}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 {/* Search */}
                 <div className="md:col-span-2">
                   <label className={`block text-sm font-medium ${themeClasses.textPrimary} mb-2`}>
@@ -929,7 +929,7 @@ function RecipesPage() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {filteredRecipes.map((recipe) => (
                   <div key={recipe.id} className={`${themeClasses.bgCard} rounded-2xl ${themeClasses.shadowCard} overflow-hidden ${themeClasses.shadowHover} transition-shadow duration-300 hover:-translate-y-2`}>
                     {/* Recipe Image */}
@@ -958,18 +958,18 @@ function RecipesPage() {
                     </div>
 
                     {/* Recipe Content */}
-                    <div className="p-6">
-                      <div className="mb-4">
-                        <h3 className={`text-xl font-bold ${themeClasses.textPrimary} mb-2 line-clamp-2`}>
+                    <div className="p-4 sm:p-6">
+                      <div className="mb-3 sm:mb-4">
+                        <h3 className={`text-lg sm:text-xl font-bold ${themeClasses.textPrimary} mb-2 line-clamp-2`}>
                           {recipe.title}
                         </h3>
-                        <p className={`${themeClasses.textSecondary} text-sm line-clamp-2`}>
+                        <p className={`${themeClasses.textSecondary} text-xs sm:text-sm line-clamp-2`}>
                           {recipe.description}
                         </p>
                       </div>
 
                       {/* Recipe Stats */}
-                      <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
                         <div className="text-center">
                           <div className={`text-lg font-bold ${themeClasses.textPrimary}`}>
                             {recipe.servings}
@@ -989,7 +989,7 @@ function RecipesPage() {
                       </div>
 
                       {/* Nutrition Info */}
-                      <div className="grid grid-cols-3 gap-2 mb-4">
+                      <div className="grid grid-cols-3 gap-2 mb-3 sm:mb-4">
                         <div className="text-center">
                           <div className={`text-sm font-bold ${themeClasses.textPrimary}`}>
                             {recipe.calories}
@@ -1052,7 +1052,7 @@ function RecipesPage() {
                       )}
 
                       {/* View Recipe Button */}
-                      <button className={`w-full ${themeClasses.btnPrimary} text-white py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105`}>
+                      <button className={`w-full ${themeClasses.btnPrimary} text-white py-2 sm:py-3 rounded-lg font-semibold text-sm sm:text-base transition-all duration-300 hover:scale-105`}>
                         {tr.viewRecipe}
                       </button>
                     </div>

@@ -96,24 +96,24 @@ const KnowledgePage = () => {
       {/* Main Content */}
       <main>
         {/* Hero Section */}
-        <div className={`relative ${isDarkMode ? 'bg-gradient-to-b from-slate-800 via-slate-900 to-black' : 'bg-gradient-to-b from-emerald-50 via-emerald-100 to-emerald-200'} py-20`}>
+        <div className={`relative ${isDarkMode ? 'bg-gradient-to-b from-slate-800 via-slate-900 to-black' : 'bg-gradient-to-b from-emerald-50 via-emerald-100 to-emerald-200'} py-12 sm:py-16 md:py-20`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             {/* Icon */}
-            <div className="mb-8">
-              <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto shadow-2xl shadow-emerald-500/25 animate-pulse">
-                <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <div className="mb-6 sm:mb-8">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto shadow-2xl shadow-emerald-500/25 animate-pulse">
+                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
               </div>
             </div>
 
             {/* Main Heading */}
-            <h1 className={`text-5xl md:text-6xl font-bold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'} mb-6 animate-fadeIn`}>
+            <h1 className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'} mb-4 sm:mb-6 px-2 animate-fadeIn`}>
               {t.knowledgePage?.title || (language === 'hebrew' ? 'ידע והשראה' : 'Knowledge & Inspiration')}
             </h1>
 
             {/* Subtitle */}
-            <p className={`text-xl ${isDarkMode ? 'text-slate-300' : 'text-slate-700'} mb-8 max-w-3xl mx-auto`}>
+            <p className={`text-base sm:text-lg md:text-xl ${isDarkMode ? 'text-slate-300' : 'text-slate-700'} mb-6 sm:mb-8 max-w-3xl mx-auto px-2`}>
               {t.knowledgePage?.subtitle || (language === 'hebrew' 
                 ? 'מחקרים מדעיים מובילים בתחום התזונה, הבריאות והפעילות הגופנית'
                 : 'Leading Scientific Research in Nutrition, Health, and Physical Activity'
@@ -123,14 +123,14 @@ const KnowledgePage = () => {
         </div>
 
         {/* Studies Section */}
-        <div className={`py-20 ${isDarkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
+        <div className={`py-12 sm:py-16 md:py-20 ${isDarkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Section Header */}
-            <div className="text-center mb-16">
-              <h2 className={`text-4xl font-bold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'} mb-4`}>
+            <div className="text-center mb-8 sm:mb-12 md:mb-16">
+              <h2 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'} mb-3 sm:mb-4`}>
                 {t.knowledgePage?.sectionTitle || (language === 'hebrew' ? 'מחקרים מדעיים מובילים' : 'Evidence-Based Scientific Studies')}
               </h2>
-              <p className={`text-lg ${isDarkMode ? 'text-slate-300' : 'text-slate-600'} max-w-3xl mx-auto`}>
+              <p className={`text-base sm:text-lg ${isDarkMode ? 'text-slate-300' : 'text-slate-600'} max-w-3xl mx-auto px-2`}>
                 {t.knowledgePage?.sectionDescription || (language === 'hebrew'
                   ? 'חמישה מחקרים מדעיים מוכחים ומעניינים שמראים את הקשר בין תזונה, פעילות גופנית ובריאות'
                   : 'Five well-known, evidence-based, and genuinely interesting scientific papers on nutrition, health, and exercise'
@@ -139,7 +139,7 @@ const KnowledgePage = () => {
             </div>
 
             {/* Studies Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8">
               {studies.map((study, index) => (
                 <div 
                   key={study.id}

@@ -10,10 +10,13 @@ import RecipesPage from './pages/RecipesPage';
 import PricingPage from './pages/PricingPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PaymentCancelPage from './pages/PaymentCancelPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
 import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { StripeProvider } from './context/StripeContext';
+import CookieConsent from './components/CookieConsent';
 import './App.css';
 
 function App() {
@@ -24,6 +27,7 @@ function App() {
           <LanguageProvider>
             <Router>
               <div className="App">
+                <CookieConsent />
                 <Routes>
                   <Route path="/" element={<HomePage />} />
                   <Route path="/login" element={<LoginPage />} />
@@ -35,6 +39,8 @@ function App() {
                   <Route path="/pricing" element={<PricingPage />} />
                   <Route path="/payment-success" element={<PaymentSuccessPage />} />
                   <Route path="/payment-cancel" element={<PaymentCancelPage />} />
+                  <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                  <Route path="/terms" element={<TermsOfServicePage />} />
                 </Routes>
               </div>
             </Router>
