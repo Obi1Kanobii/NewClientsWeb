@@ -9,6 +9,7 @@ import { getMealPlan, debugMealPlans, getFoodLogs, createFoodLog, updateFoodLog,
 import { getAllProducts, getProductsByCategory, getProduct } from '../config/stripe-products';
 import PricingCard from '../components/PricingCard';
 import OnboardingModal from '../components/OnboardingModal';
+import { translateMenu } from '../services/translateService';
 
 const ProfilePage = () => {
   const { user, isAuthenticated } = useAuth();
@@ -1156,6 +1157,7 @@ const MyPlanTab = ({ themeClasses, t, userCode, language }) => {
   const [planData, setPlanData] = useState(null);
   const [error, setError] = useState('');
   const [expandedMeals, setExpandedMeals] = useState({});
+  const [isTranslating, setIsTranslating] = useState(false);
 
   useEffect(() => {
     const loadMealPlan = async () => {
@@ -1166,6 +1168,7 @@ const MyPlanTab = ({ themeClasses, t, userCode, language }) => {
       }
 
       try {
+        setLoading(true);
         const { data, error } = await getMealPlan(userCode);
         
         if (error) {
@@ -1173,10 +1176,48 @@ const MyPlanTab = ({ themeClasses, t, userCode, language }) => {
           setError(error.message);
         } else if (data) {
           // Process the meal plan data
-          const mealPlan = data.meal_plan;
+          let mealPlan = data.meal_plan;
           console.log('Processing meal plan data:', mealPlan);
           
           if (mealPlan && mealPlan.meals) {
+            // Translate meal plan if language is Hebrew
+            if (language === 'hebrew') {
+              try {
+                setIsTranslating(true);
+                console.log('🌐 Starting translation for meal plan with', mealPlan.meals.length, 'meals');
+                
+                // Log sample data before translation
+                if (mealPlan.meals[0]?.main) {
+                  console.log('📝 Before translation - Sample meal:', {
+                    meal: mealPlan.meals[0].meal,
+                    title: mealPlan.meals[0].main.meal_title,
+                    firstIngredient: mealPlan.meals[0].main.ingredients?.[0]
+                  });
+                }
+                
+                const translatedMealPlan = await translateMenu(mealPlan, 'he');
+                
+                if (translatedMealPlan && translatedMealPlan.meals) {
+                  // Log sample data after translation
+                  if (translatedMealPlan.meals[0]?.main) {
+                    console.log('✅ After translation - Sample meal:', {
+                      meal: translatedMealPlan.meals[0].meal,
+                      title: translatedMealPlan.meals[0].main.meal_title,
+                      firstIngredient: translatedMealPlan.meals[0].main.ingredients?.[0]
+                    });
+                  }
+                  
+                  mealPlan = translatedMealPlan;
+                  console.log('✅ Meal plan translated to Hebrew successfully');
+                }
+              } catch (translateError) {
+                console.error('❌ Translation error (using original):', translateError);
+                // Continue with original meal plan
+              } finally {
+                setIsTranslating(false);
+              }
+            }
+
             // Calculate totals from the meals array
             const totals = mealPlan.meals.reduce((acc, meal) => {
               if (meal.main && meal.main.nutrition) {
@@ -1224,14 +1265,19 @@ const MyPlanTab = ({ themeClasses, t, userCode, language }) => {
     };
 
     loadMealPlan();
-  }, [userCode]);
+  }, [userCode, language]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
-          <p className={`${themeClasses.textSecondary}`}>{t.profile.myPlanTab.loading}</p>
+          <p className={`${themeClasses.textSecondary}`}>
+            {isTranslating 
+              ? (language === 'hebrew' ? 'מתרגם תוכנית תזונה...' : 'Translating meal plan...') 
+              : t.profile.myPlanTab.loading
+            }
+          </p>
         </div>
       </div>
     );
@@ -1309,20 +1355,32 @@ const MyPlanTab = ({ themeClasses, t, userCode, language }) => {
     <div className={`${themeClasses.bgPrimary} min-h-screen p-4 sm:p-6 md:p-8 animate-fadeIn`}>
       {/* Daily Summary Section */}
       <div className="mb-6 sm:mb-8 md:mb-10 lg:mb-12 animate-slideInUp">
-        <div className="flex items-center mb-4 sm:mb-6 md:mb-8">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-lg shadow-emerald-500/25 animate-pulse">
-            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
-            </svg>
+        <div className="flex items-center justify-between mb-4 sm:mb-6 md:mb-8">
+          <div className="flex items-center">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-lg shadow-emerald-500/25 animate-pulse">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
+              </svg>
+            </div>
+            <div>
+              <h2 className={`${themeClasses.textPrimary} text-xl sm:text-2xl md:text-3xl font-bold tracking-tight`}>
+                {language === 'hebrew' ? 'סיכום יומי' : 'Daily Summary'}
+              </h2>
+              <p className={`${themeClasses.textSecondary} text-sm sm:text-base mt-0.5 sm:mt-1`}>
+                {language === 'hebrew' ? 'סה"כ ארוחות מתוכננות' : 'Total planned meals'}
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className={`${themeClasses.textPrimary} text-xl sm:text-2xl md:text-3xl font-bold tracking-tight`}>
-              {language === 'hebrew' ? 'סיכום יומי' : 'Daily Summary'}
-            </h2>
-            <p className={`${themeClasses.textSecondary} text-sm sm:text-base mt-0.5 sm:mt-1`}>
-              {language === 'hebrew' ? 'סה"כ ארוחות מתוכננות' : 'Total planned meals'}
-            </p>
-          </div>
+          
+          {/* Translation Indicator */}
+          {isTranslating && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-blue-500/20 border border-blue-500/30 rounded-lg">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+              <span className="text-blue-400 text-xs sm:text-sm font-medium">
+                {language === 'hebrew' ? 'מתרגם...' : 'Translating...'}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Summary Cards */}
@@ -1493,10 +1551,12 @@ const MyPlanTab = ({ themeClasses, t, userCode, language }) => {
                       <span className="text-xl sm:text-2xl animate-bounce" style={{ animationDelay: `${index * 0.2}s` }}>{getMealIcon(meal.meal)}</span>
                   </div>
                     <div>
+                      <p className={`${themeClasses.textSecondary} text-xs sm:text-sm font-medium mb-1`}>
+                        {meal.meal}
+                      </p>
                       <h4 className={`${themeClasses.textPrimary} text-base sm:text-lg md:text-xl font-bold tracking-tight`}>
-                        {language === 'hebrew' ? 'ארוחה:' : 'Meal:'} {meal.meal}
+                        {meal.main?.meal_title || meal.main?.title || meal.meal}
                       </h4>
-                      <p className={`${getMealColor(meal.meal)} text-sm sm:text-base font-semibold mt-0.5 sm:mt-1`}>{meal.meal}</p>
                     </div>
                     </div>
                   <div className="flex items-center gap-2 sm:gap-4 self-end sm:self-auto">
@@ -1596,46 +1656,46 @@ const MyPlanTab = ({ themeClasses, t, userCode, language }) => {
                       <span className={`${themeClasses.textPrimary} text-base sm:text-lg font-bold tracking-tight`}>
                         {language === 'hebrew' ? 'מרכיבים' : 'Ingredients'}
                       </span>
-                      <span className={`${themeClasses.textSecondary} text-xs sm:text-sm font-medium ml-2 sm:ml-3`}>
-                        4 {language === 'hebrew' ? 'פריטים' : 'Items'}
-                      </span>
+                      {meal.main && meal.main.ingredients && (
+                        <span className={`${themeClasses.textSecondary} text-xs sm:text-sm font-medium ml-2 sm:ml-3`}>
+                          {meal.main.ingredients.length} {language === 'hebrew' ? 'פריטים' : 'Items'}
+                        </span>
+                      )}
                     </div>
                     
-                    {/* Mock ingredients for now - you can replace with actual data */}
-                    <div className="space-y-2 sm:space-y-3">
-                      <div className={`flex items-start sm:items-center ${themeClasses.textSecondary} text-xs sm:text-sm md:text-base transform hover:translate-x-2 transition-all duration-300 hover:${themeClasses.textPrimary}`}>
-                        <div className="w-2 h-2 sm:w-3 sm:h-3 bg-emerald-500 rounded-full mr-2 sm:mr-4 animate-pulse flex-shrink-0 mt-1.5 sm:mt-0"></div>
-                        <span className="font-medium flex-1">Greek yogurt, plain, 0% fat</span>
-                        <span className="ml-2 font-semibold whitespace-nowrap">4 cups</span>
-                        <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${themeClasses.textMuted} ml-2 sm:ml-3 hidden sm:block flex-shrink-0`} fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM8 15v-3a2 2 0 114 0v3H8z" clipRule="evenodd"/>
-                        </svg>
+                    {/* Actual ingredients from meal data */}
+                    {meal.main && meal.main.ingredients && meal.main.ingredients.length > 0 ? (
+                      <div className="space-y-2 sm:space-y-3">
+                        {meal.main.ingredients.map((ingredient, idx) => (
+                          <div 
+                            key={idx}
+                            className={`flex items-start sm:items-center ${themeClasses.textSecondary} text-xs sm:text-sm md:text-base transform hover:translate-x-2 transition-all duration-300 hover:${themeClasses.textPrimary}`}
+                          >
+                            <div className="w-2 h-2 sm:w-3 sm:h-3 bg-emerald-500 rounded-full mr-2 sm:mr-4 animate-pulse flex-shrink-0 mt-1.5 sm:mt-0"></div>
+                            <span className="font-medium flex-1">
+                              {ingredient.item || ingredient.name || 'Unknown item'}
+                            </span>
+                            <span className="ml-2 font-semibold whitespace-nowrap">
+                              {ingredient.household_measure || ingredient.measure || '-'}
+                            </span>
+                            {ingredient['portionSI(gram)'] && (
+                              <span className={`${themeClasses.textMuted} text-xs ml-2 hidden md:inline`}>
+                                ({ingredient['portionSI(gram)']}g)
+                              </span>
+                            )}
+                            <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${themeClasses.textMuted} ml-2 sm:ml-3 hidden sm:block flex-shrink-0`} fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM8 15v-3a2 2 0 114 0v3H8z" clipRule="evenodd"/>
+                            </svg>
+                          </div>
+                        ))}
                       </div>
-                      <div className={`flex items-start sm:items-center ${themeClasses.textSecondary} text-xs sm:text-sm md:text-base transform hover:translate-x-2 transition-all duration-300 hover:${themeClasses.textPrimary}`}>
-                        <div className="w-2 h-2 sm:w-3 sm:h-3 bg-emerald-500 rounded-full mr-2 sm:mr-4 animate-pulse flex-shrink-0 mt-1.5 sm:mt-0"></div>
-                        <span className="font-medium flex-1">Granola, nut-free</span>
-                        <span className="ml-2 font-semibold whitespace-nowrap">0.8 cup</span>
-                        <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${themeClasses.textMuted} ml-2 sm:ml-3 hidden sm:block flex-shrink-0`} fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM8 15v-3a2 2 0 114 0v3H8z" clipRule="evenodd"/>
-                        </svg>
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className={`${themeClasses.textMuted} text-sm italic`}>
+                          {language === 'hebrew' ? 'אין מרכיבים זמינים' : 'No ingredients available'}
+                        </p>
                       </div>
-                      <div className={`flex items-start sm:items-center ${themeClasses.textSecondary} text-xs sm:text-sm md:text-base transform hover:translate-x-2 transition-all duration-300 hover:${themeClasses.textPrimary}`}>
-                        <div className="w-2 h-2 sm:w-3 sm:h-3 bg-emerald-500 rounded-full mr-2 sm:mr-4 animate-pulse flex-shrink-0 mt-1.5 sm:mt-0"></div>
-                        <span className="font-medium flex-1">Blueberries</span>
-                        <span className="ml-2 font-semibold whitespace-nowrap">2/3 cup</span>
-                        <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${themeClasses.textMuted} ml-2 sm:ml-3 hidden sm:block flex-shrink-0`} fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM8 15v-3a2 2 0 114 0v3H8z" clipRule="evenodd"/>
-                        </svg>
-                      </div>
-                      <div className={`flex items-start sm:items-center ${themeClasses.textSecondary} text-xs sm:text-sm md:text-base transform hover:translate-x-2 transition-all duration-300 hover:${themeClasses.textPrimary}`}>
-                        <div className="w-2 h-2 sm:w-3 sm:h-3 bg-emerald-500 rounded-full mr-2 sm:mr-4 animate-pulse flex-shrink-0 mt-1.5 sm:mt-0"></div>
-                        <span className="font-medium flex-1">Canola oil</span>
-                        <span className="ml-2 font-semibold whitespace-nowrap">1.5 tbsp</span>
-                        <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${themeClasses.textMuted} ml-2 sm:ml-3 hidden sm:block flex-shrink-0`} fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM8 15v-3a2 2 0 114 0v3H8z" clipRule="evenodd"/>
-                        </svg>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>

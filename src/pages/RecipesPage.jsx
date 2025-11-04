@@ -14,6 +14,8 @@ function RecipesPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Translations
   const translations = {
@@ -41,7 +43,23 @@ function RecipesPage() {
       error: 'שגיאה בטעינת המתכונים',
       viewRecipe: 'צפה במתכון',
       minutes: 'דקות',
-      grams: 'גרם'
+      grams: 'גרם',
+      close: 'סגור',
+      nutritionFacts: 'ערכים תזונתיים',
+      perServing: 'למנה',
+      totalTime: 'זמן כולל',
+      prepTime: 'זמן הכנה',
+      cookingTips: 'טיפי בישול',
+      tips: [
+        'מומלץ להכין את המרכיבים מראש לחיסכון בזמן - מדידה וחיתוך מוקדמים יקלו על תהליך הבישול',
+        'כדי לקבל ירקות פריכים יותר, הקפיאו אותם מיד לאחר הבישול במים קרים עם קרח',
+        'תבלינים רעננים מוסיפים טעם עשיר יותר מתבלינים יבשים - השתמשו בהם בסוף הבישול',
+        'חממו תמיד את המחבת או התנור לפני תחילת הבישול לתוצאות אחידות וטעימות יותר',
+        'טעמו את האוכל לאורך כל תהליך הבישול - זה הסוד למנה מושלמת!',
+        'שמרו על סכיני המטבח חדים - סכין חד בטוח יותר ומקל על העבודה במטבח',
+        'הוסיפו מעט מלח למים של פסטה - זה משפר את הטעם וגורם למים לרתוח מהר יותר',
+        'תנו לבשר לנוח 5-10 דקות אחרי הבישול - כך המיצים יתפזרו שווה והבשר יהיה עסיסי יותר'
+      ]
     },
     english: {
       title: 'Recipes',
@@ -67,7 +85,23 @@ function RecipesPage() {
       error: 'Error loading recipes',
       viewRecipe: 'View Recipe',
       minutes: 'minutes',
-      grams: 'g'
+      grams: 'g',
+      close: 'Close',
+      nutritionFacts: 'Nutrition Facts',
+      perServing: 'Per Serving',
+      totalTime: 'Total Time',
+      prepTime: 'Prep Time',
+      cookingTips: 'Cooking Tips',
+      tips: [
+        'Prep your ingredients beforehand - measuring and chopping in advance makes cooking smoother',
+        'For crispier vegetables, shock them in ice water immediately after cooking to lock in color and texture',
+        'Fresh herbs add richer flavor than dried - add them at the end of cooking for maximum impact',
+        'Always preheat your pan or oven before cooking for even, consistent results',
+        'Taste as you go - it\'s the secret to perfectly balanced dishes!',
+        'Keep your knives sharp - a sharp knife is safer and makes kitchen work much easier',
+        'Add a pinch of salt to pasta water - it enhances flavor and helps water boil faster',
+        'Let meat rest 5-10 minutes after cooking - juices redistribute, making it more tender and juicy'
+      ]
     }
   };
 
@@ -779,6 +813,18 @@ function RecipesPage() {
     loadRecipes();
   }, [language]);
 
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isModalOpen) {
+        closeRecipeModal();
+      }
+    };
+    
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isModalOpen]);
+
   const loadRecipes = () => {
     // Use mock data instead of database
     setRecipes(mockRecipes[language] || []);
@@ -801,6 +847,25 @@ function RecipesPage() {
   const formatNutrition = (value, unit = tr.grams) => {
     if (!value) return '';
     return `${value}${unit}`;
+  };
+
+  const openRecipeModal = (recipe) => {
+    setSelectedRecipe(recipe);
+    setIsModalOpen(true);
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+  };
+
+  const closeRecipeModal = () => {
+    setIsModalOpen(false);
+    setSelectedRecipe(null);
+    document.body.style.overflow = 'unset'; // Restore scrolling
+  };
+
+  const getRandomTip = () => {
+    const tips = tr.tips || [];
+    if (tips.length === 0) return '';
+    const randomIndex = Math.floor(Math.random() * tips.length);
+    return tips[randomIndex];
   };
 
   const renderIngredients = (ingredients) => {
@@ -1052,7 +1117,10 @@ function RecipesPage() {
                       )}
 
                       {/* View Recipe Button */}
-                      <button className={`w-full ${themeClasses.btnPrimary} text-white py-2 sm:py-3 rounded-lg font-semibold text-sm sm:text-base transition-all duration-300 hover:scale-105`}>
+                      <button 
+                        onClick={() => openRecipeModal(recipe)}
+                        className={`w-full ${themeClasses.btnPrimary} text-white py-2 sm:py-3 rounded-lg font-semibold text-sm sm:text-base transition-all duration-300 hover:scale-105`}
+                      >
                         {tr.viewRecipe}
                       </button>
                     </div>
@@ -1063,6 +1131,194 @@ function RecipesPage() {
           </div>
         </section>
       </main>
+
+      {/* Recipe Detail Modal */}
+      {isModalOpen && selectedRecipe && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm"
+          onClick={closeRecipeModal}
+        >
+          <div 
+            className={`${themeClasses.bgCard} rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto`}
+            onClick={(e) => e.stopPropagation()}
+            dir={direction}
+          >
+            {/* Modal Header */}
+            <div className="sticky top-0 z-10 bg-gradient-to-br from-emerald-400 to-teal-500 p-6 rounded-t-2xl">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-5xl">{selectedRecipe.image_emoji || '🍽️'}</span>
+                    <div>
+                      <h2 className="text-2xl sm:text-3xl font-bold text-white">
+                        {selectedRecipe.title}
+                      </h2>
+                      <p className="text-white/90 text-sm sm:text-base mt-1">
+                        {selectedRecipe.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={closeRecipeModal}
+                  className="ml-4 p-2 hover:bg-white/20 rounded-full transition-colors duration-200"
+                >
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Quick Stats */}
+              <div className="grid grid-cols-3 gap-3 mt-4">
+                <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3 text-center">
+                  <div className="text-white text-xl font-bold">{selectedRecipe.servings}</div>
+                  <div className="text-white/80 text-xs">{tr.servings}</div>
+                </div>
+                <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3 text-center">
+                  <div className="text-white text-xl font-bold">{selectedRecipe.cook_time}</div>
+                  <div className="text-white/80 text-xs">{tr.minutes}</div>
+                </div>
+                <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3 text-center">
+                  <div className="text-white text-xl font-bold">{selectedRecipe.difficulty}</div>
+                  <div className="text-white/80 text-xs">{tr.difficulty}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-6">
+              {/* Nutrition Facts */}
+              <div className={`${themeClasses.bgSecondary} rounded-xl p-4 sm:p-6`}>
+                <h3 className={`text-xl font-bold ${themeClasses.textPrimary} mb-4 flex items-center gap-2`}>
+                  <span>📊</span>
+                  {tr.nutritionFacts}
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <div className={`text-2xl font-bold ${themeClasses.textPrimary}`}>
+                      {selectedRecipe.calories}
+                    </div>
+                    <div className={`text-sm ${themeClasses.textMuted}`}>{tr.calories}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className={`text-2xl font-bold text-red-500`}>
+                      {selectedRecipe.protein}g
+                    </div>
+                    <div className={`text-sm ${themeClasses.textMuted}`}>{tr.protein}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className={`text-2xl font-bold text-blue-500`}>
+                      {selectedRecipe.carbs}g
+                    </div>
+                    <div className={`text-sm ${themeClasses.textMuted}`}>{tr.carbs}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className={`text-2xl font-bold text-amber-500`}>
+                      {selectedRecipe.fat}g
+                    </div>
+                    <div className={`text-sm ${themeClasses.textMuted}`}>{tr.fat}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Ingredients */}
+              <div className={`${themeClasses.bgSecondary} rounded-xl p-4 sm:p-6`}>
+                <h3 className={`text-xl font-bold ${themeClasses.textPrimary} mb-4 flex items-center gap-2`}>
+                  <span>🥘</span>
+                  {tr.ingredients}
+                </h3>
+                <div className="space-y-3">
+                  {selectedRecipe.ingredients && selectedRecipe.ingredients.map((ingredient, index) => {
+                    let ingredientText = '';
+                    if (typeof ingredient === 'object' && ingredient !== null) {
+                      if (ingredient.qty && ingredient.item) {
+                        ingredientText = `${ingredient.qty} ${ingredient.unit || ''} ${ingredient.item}`;
+                      }
+                    } else {
+                      ingredientText = String(ingredient);
+                    }
+                    
+                    return (
+                      <div 
+                        key={index} 
+                        className={`flex items-center gap-3 p-3 ${themeClasses.bgCard} rounded-lg hover:scale-102 transition-transform duration-200`}
+                      >
+                        <div className="w-2 h-2 bg-emerald-500 rounded-full flex-shrink-0"></div>
+                        <span className={`${themeClasses.textPrimary} flex-1`}>{ingredientText}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Instructions */}
+              <div className={`${themeClasses.bgSecondary} rounded-xl p-4 sm:p-6`}>
+                <h3 className={`text-xl font-bold ${themeClasses.textPrimary} mb-4 flex items-center gap-2`}>
+                  <span>👨‍🍳</span>
+                  {tr.instructions}
+                </h3>
+                <div className="space-y-4">
+                  {selectedRecipe.instructions && selectedRecipe.instructions.map((instruction, index) => (
+                    <div 
+                      key={index} 
+                      className={`flex gap-4 p-4 ${themeClasses.bgCard} rounded-lg hover:scale-102 transition-transform duration-200`}
+                    >
+                      <div className="flex-shrink-0 w-8 h-8 bg-emerald-500 text-white rounded-full flex items-center justify-center font-bold">
+                        {index + 1}
+                      </div>
+                      <p className={`${themeClasses.textPrimary} flex-1`}>{instruction}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Cooking Tips */}
+              <div className={`bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 rounded-xl p-4 sm:p-6 border-2 border-amber-300 dark:border-amber-700`}>
+                <h3 className={`text-xl font-bold mb-3 flex items-center gap-2 ${
+                  language === 'hebrew' ? 'flex-row-reverse' : ''
+                } text-amber-900 dark:text-amber-100`}>
+                  <span>💡</span>
+                  {tr.cookingTips}
+                </h3>
+                <p className={`text-amber-800 dark:text-amber-200 leading-relaxed text-sm sm:text-base ${
+                  language === 'hebrew' ? 'text-right' : 'text-left'
+                }`}>
+                  {getRandomTip()}
+                </p>
+              </div>
+
+              {/* Tags */}
+              {selectedRecipe.tags && selectedRecipe.tags.length > 0 && (
+                <div>
+                  <h3 className={`text-xl font-bold ${themeClasses.textPrimary} mb-3 flex items-center gap-2`}>
+                    <span>🏷️</span>
+                    {tr.tags}
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedRecipe.tags.map((tag, index) => (
+                      <span 
+                        key={index} 
+                        className="px-4 py-2 bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 rounded-full text-sm font-medium"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Close Button */}
+              <button
+                onClick={closeRecipeModal}
+                className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-4 rounded-xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-lg"
+              >
+                {tr.close}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

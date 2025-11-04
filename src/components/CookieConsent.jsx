@@ -9,6 +9,13 @@ const CookieConsentComponent = () => {
     
     // Initialize CookieConsent
     CookieConsent.run({
+      cookie: {
+        name: 'cc_cookie',
+        domain: window.location.hostname,
+        path: '/',
+        sameSite: "Lax",
+        expiresAfterDays: 365
+      },
       guiOptions: {
         consentModal: {
           layout: "box",
