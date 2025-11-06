@@ -96,8 +96,8 @@ const PrivacyPolicyPage = () => {
           title: "12. צור קשר",
           content: `אם יש לך שאלות לגבי מדיניות הפרטיות הזו או נוהלי הנתונים שלנו, אנא צור קשר איתנו:`,
           contact: {
-            email: "info@betterchoice.co.il",
-            phone: "050-123-4567"
+            email: "info@betterchoice.live",
+            phone: "050-2420905"
           }
         }
       ]
@@ -187,8 +187,8 @@ const PrivacyPolicyPage = () => {
           title: "12. Contact Us",
           content: `If you have questions about this Privacy Policy or our data practices, please contact us:`,
           contact: {
-            email: "info@betterchoice.co.il",
-            phone: "050-123-4567"
+            email: "info@betterchoice.live",
+            phone: "050-2420905"
           }
         }
       ]

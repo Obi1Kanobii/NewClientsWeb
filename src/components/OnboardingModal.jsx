@@ -553,8 +553,53 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
     }
   };
 
-  const handleSkip = () => {
-    onClose();
+  const handleSkip = async () => {
+    setLoading(true);
+    try {
+      // Mark onboarding as completed even though they skipped
+      const { error: updateError } = await supabase
+        .from('clients')
+        .update({ 
+          onboarding_completed: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id);
+
+      if (updateError) {
+        console.error('Error marking onboarding as skipped:', updateError);
+      }
+
+      // Also update chat_users if available
+      if (supabaseSecondary && userCode) {
+        try {
+          const { data: chatUser, error: chatUserError } = await supabaseSecondary
+            .from('chat_users')
+            .select('id')
+            .eq('user_code', userCode)
+            .single();
+
+          if (!chatUserError && chatUser) {
+            await supabaseSecondary
+              .from('chat_users')
+              .update({ 
+                onboarding_done: true,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', chatUser.id);
+          }
+        } catch (syncError) {
+          console.error('Error syncing skip to chat_users:', syncError);
+        }
+      }
+
+      onClose();
+    } catch (err) {
+      console.error('Error skipping onboarding:', err);
+      // Close anyway
+      onClose();
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen) return null;

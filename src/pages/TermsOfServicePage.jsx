@@ -119,8 +119,8 @@ const TermsOfServicePage = () => {
           title: "13. צור קשר",
           content: `אם יש לך שאלות לגבי תנאי שימוש אלה, אנא צור קשר איתנו:`,
           contact: {
-            email: "info@betterchoice.co.il",
-            phone: "050-123-4567",
+            email: "info@betterchoice.live",
+            phone: "050-2420905",
             address: "ישראל"
           }
         }
@@ -235,8 +235,8 @@ const TermsOfServicePage = () => {
           title: "13. Contact Us",
           content: `If you have questions about these Terms of Service, please contact us:`,
           contact: {
-            email: "info@betterchoice.co.il",
-            phone: "050-123-4567",
+            email: "info@betterchoice.live",
+            phone: "050-2420905",
             address: "Israel"
           }
         }

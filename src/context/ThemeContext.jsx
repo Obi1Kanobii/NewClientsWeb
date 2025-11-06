@@ -57,8 +57,9 @@ export const ThemeProvider = ({ children }) => {
       borderSecondary: isDarkMode ? 'border-gray-600' : 'border-gray-200',
       
       // Input colors
-      inputBg: isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300',
+      inputBg: isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900',
       inputFocus: isDarkMode ? 'focus:ring-emerald-400 focus:border-emerald-400' : 'focus:ring-emerald-500 focus:border-emerald-500',
+      inputText: isDarkMode ? 'text-white placeholder:text-gray-400' : 'text-gray-900 placeholder:text-gray-500',
       
       // Button colors
       btnPrimary: isDarkMode ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600' : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700',

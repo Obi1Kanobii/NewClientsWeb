@@ -1,11 +1,17 @@
 import { useEffect } from 'react';
+import { useLanguage } from '../context/LanguageContext';
 import * as CookieConsent from 'vanilla-cookieconsent';
 import 'vanilla-cookieconsent/dist/cookieconsent.css';
 
 const CookieConsentComponent = () => {
+  const { language } = useLanguage();
+
   useEffect(() => {
     // Expose CookieConsent to window for external access
     window.CookieConsent = CookieConsent;
+    
+    // Determine the language to use
+    const cookieLanguage = language === 'hebrew' ? 'he' : 'en';
     
     // Initialize CookieConsent
     CookieConsent.run({
@@ -45,7 +51,7 @@ const CookieConsentComponent = () => {
         }
       },
       language: {
-        default: "en",
+        default: cookieLanguage,
         autoDetect: "browser",
         translations: {
           he: {
@@ -109,7 +115,7 @@ const CookieConsentComponent = () => {
                 },
                 {
                   title: "מידע נוסף",
-                  description: 'לכל שאלה בנוגע למדיניות העוגיות שלנו והבחירות שלך, אנא <a class="cc__link" href="mailto:info@betterchoice.co.il">צור קשר</a>.'
+                  description: 'לכל שאלה בנוגע למדיניות העוגיות שלנו והבחירות שלך, אנא <a class="cc__link" href="mailto:info@betterchoice.live">צור קשר</a>.'
                 }
               ]
             }
@@ -175,7 +181,7 @@ const CookieConsentComponent = () => {
                 },
                 {
                   title: "More information",
-                  description: 'For any queries in relation to our policy on cookies and your choices, please <a class="cc__link" href="mailto:info@betterchoice.co.il">contact us</a>.'
+                  description: 'For any queries in relation to our policy on cookies and your choices, please <a class="cc__link" href="mailto:info@betterchoice.live">contact us</a>.'
                 }
               ]
             }
@@ -230,7 +236,27 @@ const CookieConsentComponent = () => {
         });
       }
     }, 100);
+
+    // Update CookieConsent language when site language changes
+    return () => {
+      if (observer) {
+        observer.disconnect();
+      }
+    };
   }, []);
+
+  // Update cookie consent language when site language changes
+  useEffect(() => {
+    const cookieLanguage = language === 'hebrew' ? 'he' : 'en';
+    if (window.CookieConsent && typeof window.CookieConsent.setLanguage === 'function') {
+      try {
+        window.CookieConsent.setLanguage(cookieLanguage);
+        console.log('Cookie consent language updated to:', cookieLanguage);
+      } catch (error) {
+        console.error('Error updating cookie consent language:', error);
+      }
+    }
+  }, [language]);
 
   return null;
 };

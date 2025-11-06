@@ -1,5 +1,55 @@
 import { supabase, supabaseSecondary } from './supabaseClient'
 
+// Check if email already exists in clients table
+export const checkEmailExists = async (email) => {
+  try {
+    console.log('Checking if email exists:', email);
+    
+    const { data, error } = await supabase
+      .from('clients')
+      .select('email')
+      .eq('email', email.toLowerCase())
+      .maybeSingle();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error checking email:', error);
+      return { exists: false, error };
+    }
+
+    const exists = !!data;
+    console.log('Email exists:', exists);
+    return { exists, error: null };
+  } catch (error) {
+    console.error('Error checking email:', error);
+    return { exists: false, error };
+  }
+};
+
+// Check if phone number already exists in clients table
+export const checkPhoneExists = async (phone) => {
+  try {
+    console.log('Checking if phone exists:', phone);
+    
+    const { data, error } = await supabase
+      .from('clients')
+      .select('phone')
+      .eq('phone', phone)
+      .maybeSingle();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error checking phone:', error);
+      return { exists: false, error };
+    }
+
+    const exists = !!data;
+    console.log('Phone exists:', exists);
+    return { exists, error: null };
+  } catch (error) {
+    console.error('Error checking phone:', error);
+    return { exists: false, error };
+  }
+};
+
 // Sign up with email and password
 export const signUp = async (email, password, userData = {}) => {
   try {
@@ -45,6 +95,62 @@ export const signIn = async (email, password) => {
   }
 }
 
+// Sign in with Google OAuth
+export const signInWithGoogle = async () => {
+  try {
+    console.log('Attempting Google OAuth login...');
+    console.log('Current origin:', window.location.origin);
+    
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        }
+      }
+    })
+    
+    if (error) {
+      console.error('Google OAuth error:', error);
+      throw error;
+    }
+    
+    console.log('Google OAuth initiated successfully');
+    return { data, error: null }
+  } catch (error) {
+    console.error('Google sign in error:', error);
+    return { data: null, error }
+  }
+}
+
+// Sign in with Facebook OAuth
+export const signInWithFacebook = async () => {
+  try {
+    console.log('Attempting Facebook OAuth login...');
+    console.log('Current origin:', window.location.origin);
+    
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'facebook',
+      options: {
+        redirectTo: window.location.origin
+      }
+    })
+    
+    if (error) {
+      console.error('Facebook OAuth error:', error);
+      throw error;
+    }
+    
+    console.log('Facebook OAuth initiated successfully');
+    return { data, error: null }
+  } catch (error) {
+    console.error('Facebook sign in error:', error);
+    return { data: null, error }
+  }
+}
+
 // Sign out
 export const signOut = async () => {
   try {
@@ -69,7 +175,7 @@ export const getCurrentUser = async () => {
   }
 }
 
-// Reset password
+// Reset password - send email with link
 export const resetPassword = async (email) => {
   try {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -80,6 +186,20 @@ export const resetPassword = async (email) => {
   } catch (error) {
     console.error('Reset password error:', error)
     return { error }
+  }
+}
+
+// Update password after reset
+export const updatePassword = async (newPassword) => {
+  try {
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword
+    })
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Update password error:', error)
+    return { data: null, error }
   }
 }
 
@@ -187,18 +307,21 @@ export const createClientRecord = async (userId, userData) => {
       if (supabaseSecondary && data && data[0]) {
         try {
           console.log('Creating chat_users record for user_code:', userCode);
+          console.log('User platform:', userData.platform || 'web');
+          
           const chatUserData = {
             user_code: userCode,
             full_name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
             email: userData.email,
             phone_number: userData.phone,
-            platform: 'web',
+            platform: 'whatsapp',
             activated: false,
             is_verified: false,
             language: 'en',
             created_at: new Date().toISOString()
           };
 
+          console.log('Inserting into chat_users with data:', chatUserData);
           const { data: chatUserDataResult, error: chatUserError } = await supabaseSecondary
             .from('chat_users')
             .insert([chatUserData])
@@ -206,14 +329,21 @@ export const createClientRecord = async (userId, userData) => {
 
           if (chatUserError) {
             console.error('Error creating chat_users record:', chatUserError);
+            console.error('Chat user error details:', JSON.stringify(chatUserError, null, 2));
             // Don't throw - continue even if chat_users creation fails
           } else {
-            console.log('Chat user created successfully:', chatUserDataResult);
+            console.log('✅ Chat user created successfully in secondary database!');
+            console.log('Chat user data:', chatUserDataResult);
           }
         } catch (chatError) {
           console.error('Unexpected error creating chat_users record:', chatError);
           // Don't throw - continue even if chat_users creation fails
         }
+      } else {
+        console.warn('⚠️ Secondary Supabase client not available or no data returned');
+        console.log('supabaseSecondary available:', !!supabaseSecondary);
+        console.log('data available:', !!data);
+        console.log('data[0] available:', data && !!data[0]);
       }
       
       return { data, error: null }
@@ -251,18 +381,21 @@ export const createClientRecord = async (userId, userData) => {
     if (supabaseSecondary && data && data[0]) {
       try {
         console.log('Creating chat_users record for user_code:', userCode);
+        console.log('User platform:', userData.platform || 'web');
+        
         const chatUserData = {
           user_code: userCode,
           full_name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
           email: userData.email,
           phone_number: userData.phone,
-          platform: 'web',
+          platform: 'whatsapp',
           activated: false,
           is_verified: false,
           language: 'en',
           created_at: new Date().toISOString()
         };
 
+        console.log('Inserting into chat_users with data:', chatUserData);
         const { data: chatUserDataResult, error: chatUserError } = await supabaseSecondary
           .from('chat_users')
           .insert([chatUserData])
@@ -270,14 +403,21 @@ export const createClientRecord = async (userId, userData) => {
 
         if (chatUserError) {
           console.error('Error creating chat_users record:', chatUserError);
+          console.error('Chat user error details:', JSON.stringify(chatUserError, null, 2));
           // Don't throw - continue even if chat_users creation fails
         } else {
-          console.log('Chat user created successfully:', chatUserDataResult);
+          console.log('✅ Chat user created successfully in secondary database!');
+          console.log('Chat user data:', chatUserDataResult);
         }
       } catch (chatError) {
         console.error('Unexpected error creating chat_users record:', chatError);
         // Don't throw - continue even if chat_users creation fails
       }
+    } else {
+      console.warn('⚠️ Secondary Supabase client not available or no data returned');
+      console.log('supabaseSecondary available:', !!supabaseSecondary);
+      console.log('data available:', !!data);
+      console.log('data[0] available:', data && !!data[0]);
     }
     
     return { data, error: null }

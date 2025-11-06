@@ -1544,7 +1544,11 @@ function HomePage() {
                       </div>
                       <div>
                         <div className={`font-semibold ${themeClasses.textPrimary}`}>{t.contact.details.email}</div>
-                        <div className={themeClasses.textSecondary}>info@betterchoice.co.il</div>
+                        <div className={themeClasses.textSecondary}>
+                          <a href="mailto:info@betterchoice.live" className="hover:text-emerald-600">
+                            info@betterchoice.live
+                          </a>
+                        </div>
                         <div className={`${themeClasses.textMuted} text-sm`}>{language === 'hebrew' ? 'מענה תוך 24 שעות' : 'Response within 24 hours'}</div>
                       </div>
                     </div>

@@ -347,7 +347,7 @@ const PaymentSuccessPage = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <a 
-                href="mailto:support@betterchoice.co.il" 
+                href="mailto:info@betterchoice.live" 
                 className="inline-flex items-center justify-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-200 text-sm"
               >
                 <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
