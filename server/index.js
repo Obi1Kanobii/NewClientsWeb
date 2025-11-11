@@ -13,7 +13,18 @@ const supabase = createClient(
 console.log('Supabase connection:', process.env.REACT_APP_SUPABASE_URL ? 'Configured' : 'Missing URL');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+function normalizePort(value) {
+  const port = parseInt(value, 10);
+  if (Number.isNaN(port)) {
+    return value; // named pipe
+  }
+  if (port >= 0) {
+    return port;
+  }
+  return false;
+}
+
+const PORT = normalizePort(process.env.PORT || '8080');
 
 // Middleware - Temporary permissive CORS for debugging
 app.use(cors({
@@ -1037,8 +1048,10 @@ app.use((req, res) => {
 // SERVER STARTUP
 // ====================================
 
-app.listen(PORT, () => {
-  console.log(`🚀 Stripe API server running on port ${PORT}`);
+const serverInstance = app.listen(PORT, () => {
+  const addressInfo = serverInstance.address();
+  const displayPort = typeof addressInfo === 'string' ? addressInfo : addressInfo?.port;
+  console.log(`🚀 Stripe API server running on port ${displayPort}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🔒 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`💳 Stripe API Version: ${stripe.VERSION || 'latest'}`);
