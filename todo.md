@@ -1,0 +1,20 @@
+## 1. Phone Verification for Registration
+- **Files**: `src/pages/SignupPage.jsx`, `src/supabase/auth.js`, `supabase` auth configuration
+- **Issue**: Enable phone verification during user registration to ensure valid contact information and improve account security
+- **Status**: Pending
+- **Use Case**:
+  - User signs up via web form
+  - System sends verification code to provided phone number
+  - User enters code to complete registration
+  - Prevents fake or incorrect phone numbers from being saved
+- **Implementation**:
+  - Configure Supabase (or preferred provider) for SMS-based OTP verification
+  - Update signup form to collect phone number in E.164 format
+  - Add UI flow for sending and verifying OTP codes
+  - Prevent account creation until phone number is verified
+  - Store verification status in user profile (e.g., `phone_verified` flag)
+  - Handle resending codes and rate limiting
+  - Provide clear error handling and messaging for failed verifications
+  - Ensure accessibility and responsive design of verification steps
+  - Write tests or QA plan covering successful verification and error cases
+  - Document verification flow for support and operations teams
