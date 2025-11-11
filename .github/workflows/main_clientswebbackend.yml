@@ -1,55 +1,45 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
-name: Build and deploy Node.js app to Azure Web App - ClientsWebBackend
+name: Deploy ClientsWebBackend
 
 on:
   push:
     branches:
       - main
+    paths:
+      - 'server/**'
+      - '.github/workflows/main_ClientsWebBackend.yml'
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: windows-latest
-    permissions:
-      contents: read #This is required for actions/checkout
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node.js version
-        uses: actions/setup-node@v3
-        with:
-          node-version: '22.x'
-
-      - name: npm install, build, and test
-        run: |
-          npm install
-          npm run build --if-present
-          npm run test --if-present
-      
-      - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v4
-        with:
-          name: node-app
-          path: .
-
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    needs: build
-    
+
     steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          name: node-app
-      
-      - name: 'Deploy to Azure Web App'
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: server
+
+      - name: Run tests
+        run: npm test --if-present
+        working-directory: server
+
+      - name: Build
+        run: npm run build --if-present
+        working-directory: server
+
+      - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
-        id: deploy-to-webapp
         with:
-          app-name: 'ClientsWebBackend'
-          slot-name: 'Production'
-          package: .
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_E6533FE7179845FDA3E41F3DA7DF8E3F }}
+          app-name: ClientsWebBackend
+          package: server
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+
