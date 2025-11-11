@@ -1064,3 +1064,20 @@ const serverInstance = app.listen(PORT, () => {
     console.warn('⚠️  WARNING: STRIPE_WEBHOOK_SECRET not found in environment');
   }
 });
+
+process.on('SIGTERM', () => {
+  console.log('Received SIGTERM, shutting down gracefully');
+  serverInstance.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('Received SIGINT, shutting down gracefully');
+  serverInstance.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
+});
+
