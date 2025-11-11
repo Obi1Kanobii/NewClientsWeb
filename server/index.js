@@ -24,7 +24,11 @@ function normalizePort(value) {
   return false;
 }
 
-const PORT = normalizePort(process.env.PORT || '8080');
+const PORT = normalizePort(
+  process.env.PORT ||
+  process.env.HTTP_PLATFORM_PORT ||
+  '8080'
+);
 
 // Middleware - Temporary permissive CORS for debugging
 app.use(cors({
@@ -1064,20 +1068,3 @@ const serverInstance = app.listen(PORT, () => {
     console.warn('⚠️  WARNING: STRIPE_WEBHOOK_SECRET not found in environment');
   }
 });
-
-process.on('SIGTERM', () => {
-  console.log('Received SIGTERM, shutting down gracefully');
-  serverInstance.close(() => {
-    console.log('HTTP server closed');
-    process.exit(0);
-  });
-});
-
-process.on('SIGINT', () => {
-  console.log('Received SIGINT, shutting down gracefully');
-  serverInstance.close(() => {
-    console.log('HTTP server closed');
-    process.exit(0);
-  });
-});
-
