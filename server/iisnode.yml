@@ -1,5 +1,4 @@
 loggingEnabled: true
 devErrorsEnabled: true
 flushResponse: true
-nodeProcessCommandLine: "D:\\Program Files\\nodejs\\node.exe"
 
