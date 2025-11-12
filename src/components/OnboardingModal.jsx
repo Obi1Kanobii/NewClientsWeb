@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { supabase, supabaseSecondary } from '../supabase/supabaseClient';
+import { normalizePhoneForDatabase } from '../supabase/auth';
 
 const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
   const { language, t, direction, toggleLanguage } = useLanguage();
@@ -71,7 +72,8 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
 
   // Function to validate phone number based on country code
   const validatePhoneNumber = (phone, countryCode) => {
-    let phoneDigits = phone.replace(/[-\s]/g, ''); // Remove dashes and spaces
+    // Normalize phone number (remove spaces, dashes, parentheses, dots, etc.)
+    let phoneDigits = normalizePhoneForDatabase(phone);
     
     // Find the country code rules
     const countryRule = countryCodes.find(c => c.code === countryCode);
@@ -89,7 +91,8 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
     
     // Check length
     if (phoneDigits.length < countryRule.minLength) {
-      const expected = countryCode === '+972' && phone.replace(/[-\s]/g, '').startsWith('0') 
+      const normalizedInput = normalizePhoneForDatabase(phone);
+      const expected = countryCode === '+972' && normalizedInput.startsWith('0') 
         ? `10 (05X-XXX-XXXX)` 
         : `${countryRule.minLength} digits`;
       return { 
@@ -324,11 +327,14 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
   // Check if phone number exists in both clients and chat_users tables
   const checkPhoneExistsInBothTables = async (phoneNumber) => {
     try {
-      // Format phone number the same way we do when saving
-      let formattedPhone = phoneNumber.trim().replace(/[-\s]/g, '');
+      // Normalize phone number first (remove spaces, dashes, etc.)
+      let formattedPhone = normalizePhoneForDatabase(phoneNumber.trim());
+      
+      // If phone starts with 0 and country code is +972 (Israel), remove the 0 and add +972
       if (formattedPhone.startsWith('0') && formData.phoneCountryCode === '+972') {
         formattedPhone = formData.phoneCountryCode + formattedPhone.substring(1);
       } else if (!formattedPhone.startsWith('+')) {
+        // If it doesn't start with +, prepend the country code
         formattedPhone = formData.phoneCountryCode + formattedPhone;
       }
 
@@ -495,7 +501,8 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
       // Format phone number with country code
       if (allOnboardingFields.includes('phone')) {
         if (formData.phone && formData.phone.trim()) {
-          let phoneNumber = formData.phone.trim().replace(/[-\s]/g, ''); // Remove dashes and spaces
+          // First normalize (remove spaces, dashes, etc.)
+          let phoneNumber = normalizePhoneForDatabase(formData.phone.trim());
           
           // If phone starts with 0 and country code is +972 (Israel), remove the 0 and add +972
           if (phoneNumber.startsWith('0') && formData.phoneCountryCode === '+972') {
@@ -506,9 +513,6 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
           }
           
           clientData.phone = phoneNumber;
-          console.log('✅ Phone will be saved:', phoneNumber);
-        } else {
-          console.log('⚠️ Phone field is in onboarding but empty or whitespace');
         }
       }
       
@@ -564,19 +568,10 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
       }
 
       // Prepare data for chat_users
-      // Format phone for chat_users (same format as clients)
+      // Format phone for chat_users (same format as clients) - use the same normalized phone from clientData
       let formattedPhone = null;
-      if (formData.phone && formData.phone.trim()) {
-        let phoneNumber = formData.phone.trim().replace(/[-\s]/g, ''); // Remove dashes and spaces
-        
-        // If phone starts with 0 and country code is +972 (Israel), remove the 0 and add +972
-        if (phoneNumber.startsWith('0') && formData.phoneCountryCode === '+972') {
-          phoneNumber = formData.phoneCountryCode + phoneNumber.substring(1);
-        } else if (!phoneNumber.startsWith('+')) {
-          // If it doesn't start with +, prepend the country code
-          phoneNumber = formData.phoneCountryCode + phoneNumber;
-        }
-        formattedPhone = phoneNumber;
+      if (allOnboardingFields.includes('phone') && clientData.phone) {
+        formattedPhone = clientData.phone; // Already normalized and formatted with country code
       }
       
       const chatUserData = {

@@ -44,14 +44,26 @@ export const checkEmailExists = async (email) => {
   }
 };
 
+// Helper function to normalize phone number (remove spaces and dashes)
+// Export this so it can be used globally across the app
+export const normalizePhoneForDatabase = (phone) => {
+  if (!phone) return '';
+  // Remove all spaces, dashes, and other common separators
+  return phone.replace(/[\s\-\(\)\.]/g, '');
+};
+
 // Check if phone number already exists in both databases
 export const checkPhoneExists = async (phone) => {
   try {
-    // Check PRIMARY database (clients table)
+    // Normalize phone number (remove spaces and dashes) before checking
+    // This ensures we check against the format we store in the database
+    const normalizedPhone = normalizePhoneForDatabase(phone);
+
+    // Check PRIMARY database (clients table) with normalized phone
     const { data: primaryData, error: primaryError } = await supabase
       .from('clients')
       .select('phone')
-      .eq('phone', phone)
+      .eq('phone', normalizedPhone)
       .maybeSingle();
 
     if (primaryError && primaryError.code !== 'PGRST116') {
@@ -64,11 +76,11 @@ export const checkPhoneExists = async (phone) => {
 
     // Check SECONDARY database (chat_users table) - check both phone_number and whatsapp_number
     if (supabaseSecondary) {
-      // Check phone_number column
+      // Check phone_number column with normalized phone
       const { data: secondaryDataByPhone, error: secondaryError1 } = await supabaseSecondary
         .from('chat_users')
         .select('phone_number, whatsapp_number')
-        .eq('phone_number', phone)
+        .eq('phone_number', normalizedPhone)
         .maybeSingle();
 
       if (secondaryError1 && secondaryError1.code !== 'PGRST116') {
@@ -79,11 +91,11 @@ export const checkPhoneExists = async (phone) => {
         return { exists: true, error: null };
       }
 
-      // Check whatsapp_number column
+      // Check whatsapp_number column with normalized phone
       const { data: secondaryDataByWhatsApp, error: secondaryError2 } = await supabaseSecondary
         .from('chat_users')
         .select('phone_number, whatsapp_number')
-        .eq('whatsapp_number', phone)
+        .eq('whatsapp_number', normalizedPhone)
         .maybeSingle();
 
       if (secondaryError2 && secondaryError2.code !== 'PGRST116') {
@@ -343,6 +355,9 @@ export const createClientRecord = async (userId, userData) => {
     // Generate unique user code
     const userCode = await generateUniqueUserCode();
     
+    // Normalize phone number before saving (remove spaces and dashes)
+    const normalizedPhone = userData.phone ? normalizePhoneForDatabase(userData.phone) : null;
+    
     // Use the service role key for this operation
     const serviceRoleKey = process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY;
     
@@ -352,7 +367,7 @@ export const createClientRecord = async (userId, userData) => {
         user_id: userId,
         full_name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
         email: userData.email,
-        phone: userData.phone,
+        phone: normalizedPhone,
         user_code: userCode,
         status: 'active'
       };
@@ -376,8 +391,8 @@ export const createClientRecord = async (userId, userData) => {
             user_code: userCode,
             full_name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
             email: userData.email,
-            phone_number: userData.phone,
-            whatsapp_number: userData.phone, // Also set whatsapp_number for WhatsApp registrations
+            phone_number: normalizedPhone,
+            whatsapp_number: normalizedPhone, // Also set whatsapp_number for WhatsApp registrations
             platform: userData.platform || 'whatsapp',
             activated: false,
             is_verified: false,
@@ -420,7 +435,7 @@ export const createClientRecord = async (userId, userData) => {
       user_id: userId,
       full_name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
       email: userData.email,
-      phone: userData.phone,
+      phone: normalizedPhone,
       user_code: userCode,
       status: 'active'
     };
@@ -444,8 +459,8 @@ export const createClientRecord = async (userId, userData) => {
           user_code: userCode,
           full_name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
           email: userData.email,
-          phone_number: userData.phone,
-          whatsapp_number: userData.phone, // Also set whatsapp_number for WhatsApp registrations
+          phone_number: normalizedPhone,
+          whatsapp_number: normalizedPhone, // Also set whatsapp_number for WhatsApp registrations
           platform: userData.platform || 'whatsapp',
           activated: false,
           is_verified: false,
@@ -501,9 +516,15 @@ export const getClientRecord = async (userId) => {
 // Update client record in clients and optionally sync to chat_users
 export const updateClientRecord = async (userId, updates) => {
   try {
+    // Normalize phone number if it's being updated
+    const normalizedUpdates = { ...updates };
+    if (normalizedUpdates.phone) {
+      normalizedUpdates.phone = normalizePhoneForDatabase(normalizedUpdates.phone);
+    }
+    
     const { data, error } = await supabase
       .from('clients')
-      .update(updates)
+      .update(normalizedUpdates)
       .eq('user_id', userId)
       .select()
 
@@ -526,7 +547,12 @@ export const updateClientRecord = async (userId, updates) => {
           // Map fields that exist in both tables
           if (updates.full_name) chatUpdates.full_name = updates.full_name;
           if (updates.email) chatUpdates.email = updates.email;
-          if (updates.phone) chatUpdates.phone_number = updates.phone;
+          // Normalize phone number before saving to chat_users
+          if (updates.phone) {
+            const normalizedPhone = normalizePhoneForDatabase(updates.phone);
+            chatUpdates.phone_number = normalizedPhone;
+            chatUpdates.whatsapp_number = normalizedPhone;
+          }
           if (updates.region) chatUpdates.region = updates.region;
           if (updates.city) chatUpdates.city = updates.city;
           if (updates.timezone) chatUpdates.timezone = updates.timezone;

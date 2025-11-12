@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { signUp, createClientRecord, checkEmailExists, checkPhoneExists } from '../supabase/auth';
+import { signUp, createClientRecord, checkEmailExists, checkPhoneExists, normalizePhoneForDatabase } from '../supabase/auth';
 
 function WhatsAppRegisterPage() {
   const { language, direction, t, isTransitioning, toggleLanguage } = useLanguage();
@@ -28,6 +28,16 @@ function WhatsAppRegisterPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Helper function to validate phone number (accepts with or without spaces/dashes)
+  const validatePhoneNumber = (phone) => {
+    if (!phone) return false;
+    // Normalize phone number (remove spaces, dashes, etc.) for validation
+    const normalized = normalizePhoneForDatabase(phone);
+    // Validate: must start with + and have 10-15 digits after the +
+    const phoneRegex = /^\+?\d{10,15}$/;
+    return phoneRegex.test(normalized);
+  };
+
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
@@ -41,11 +51,9 @@ function WhatsAppRegisterPage() {
       // Decode URL-encoded characters
       const decodedPhone = decodeURIComponent(phoneNumber);
       
-      // Validate phone number format (basic validation)
-      // Accepts formats like: +972555555555, +1234567890, etc.
-      const phoneRegex = /^\+?\d{10,15}$/;
-      
-      if (phoneRegex.test(decodedPhone)) {
+      // Validate phone number format (accepts with or without spaces/dashes)
+      if (validatePhoneNumber(decodedPhone)) {
+        // Store the formatted phone (with spaces/dashes if present)
         setPhone(decodedPhone);
         setPhoneError('');
       } else {
@@ -115,8 +123,11 @@ function WhatsAppRegisterPage() {
       return;
     }
 
-    // Check if phone number already exists in both databases
-    const phoneCheck = await checkPhoneExists(phone);
+    // Normalize phone number (remove spaces and dashes) for database operations
+    const normalizedPhone = normalizePhoneForDatabase(phone);
+
+    // Check if phone number already exists in both databases (using normalized version)
+    const phoneCheck = await checkPhoneExists(normalizedPhone);
     if (phoneCheck.exists) {
       setError(
         language === 'hebrew'
@@ -132,7 +143,7 @@ function WhatsAppRegisterPage() {
         first_name: formData.firstName,
         last_name: formData.lastName,
         email: formData.email,
-        phone: phone,
+        phone: normalizedPhone, // Store normalized version (without spaces/dashes)
         newsletter: false, // Default to false for WhatsApp registrations
         platform: 'whatsapp' // Mark as WhatsApp registration
       };

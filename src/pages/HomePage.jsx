@@ -60,6 +60,9 @@ function HomePage() {
     setIsSubmittingContact(true);
 
     try {
+      // Normalize phone number if provided (remove spaces and dashes)
+      const normalizedPhone = contactForm.phone ? contactForm.phone.replace(/[\s\-\(\)\.]/g, '') : null;
+      
       // Send directly to Supabase
       const { data, error } = await supabase
         .from('contact_messages')
@@ -67,7 +70,7 @@ function HomePage() {
           {
             full_name: contactForm.fullName,
             email: contactForm.email,
-            phone: contactForm.phone || null,
+            phone: normalizedPhone,
             message: contactForm.message,
             user_agent: navigator.userAgent,
             created_at: new Date().toISOString()

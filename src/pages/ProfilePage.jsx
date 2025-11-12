@@ -6,6 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useStripe } from '../context/StripeContext';
 import { supabase, supabaseSecondary } from '../supabase/supabaseClient';
 import { getMealPlan, debugMealPlans, getFoodLogs, createFoodLog, updateFoodLog, deleteFoodLog, getChatMessages, createChatMessage } from '../supabase/secondaryClient';
+import { normalizePhoneForDatabase } from '../supabase/auth';
 import { getAllProducts, getProductsByCategory, getProduct } from '../config/stripe-products';
 import PricingCard from '../components/PricingCard';
 import OnboardingModal from '../components/OnboardingModal';
@@ -253,11 +254,15 @@ const ProfilePage = () => {
 
       // Prepare the data object - combine first_name and last_name into full_name
       const fullName = `${profileData.firstName.trim()} ${profileData.lastName.trim()}`.trim();
+      
+      // Normalize phone number (remove spaces and dashes) before saving
+      const normalizedPhone = profileData.phone ? normalizePhoneForDatabase(profileData.phone) : null;
+      
       const dataToSave = {
         user_id: user.id,
         full_name: fullName,
         email: profileData.email.trim(),
-        phone: profileData.phone?.trim() || null,
+        phone: normalizedPhone || null,
         birth_date: profileData.birthDate || null,
         age: finalAge,
         gender: profileData.gender || null,
