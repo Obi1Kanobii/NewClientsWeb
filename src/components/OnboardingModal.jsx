@@ -321,6 +321,71 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
     return age;
   };
 
+  // Check if phone number exists in both clients and chat_users tables
+  const checkPhoneExistsInBothTables = async (phoneNumber) => {
+    try {
+      // Format phone number the same way we do when saving
+      let formattedPhone = phoneNumber.trim().replace(/[-\s]/g, '');
+      if (formattedPhone.startsWith('0') && formData.phoneCountryCode === '+972') {
+        formattedPhone = formData.phoneCountryCode + formattedPhone.substring(1);
+      } else if (!formattedPhone.startsWith('+')) {
+        formattedPhone = formData.phoneCountryCode + formattedPhone;
+      }
+
+      // Check in clients table
+      const { data: clientData, error: clientError } = await supabase
+        .from('clients')
+        .select('phone, user_id')
+        .eq('phone', formattedPhone)
+        .maybeSingle();
+
+      // If found and it's not the current user's phone, it exists
+      if (clientData) {
+        if (clientData.user_id !== user?.id) {
+          return { exists: true, table: 'clients' };
+        }
+        // If it's the current user's phone, it's okay - they're keeping their existing number
+      }
+
+      // Check in chat_users table (if secondary DB is available)
+      if (supabaseSecondary) {
+        // Check phone_number column
+        const { data: chatUserDataByPhone, error: chatUserError1 } = await supabaseSecondary
+          .from('chat_users')
+          .select('phone_number, whatsapp_number, user_code')
+          .eq('phone_number', formattedPhone)
+          .maybeSingle();
+
+        // Check whatsapp_number column
+        const { data: chatUserDataByWhatsApp, error: chatUserError2 } = await supabaseSecondary
+          .from('chat_users')
+          .select('phone_number, whatsapp_number, user_code')
+          .eq('whatsapp_number', formattedPhone)
+          .maybeSingle();
+
+        const chatUserData = chatUserDataByPhone || chatUserDataByWhatsApp;
+
+        // If found and it's not the current user's phone (check by user_code if available)
+        if (chatUserData) {
+          // If we have userCode, check if it matches
+          if (userCode && chatUserData.user_code === userCode) {
+            // It's the same user, so it's okay
+            return { exists: false };
+          } else if (!userCode || chatUserData.user_code !== userCode) {
+            // Different user has this phone number
+            return { exists: true, table: 'chat_users' };
+          }
+        }
+      }
+
+      return { exists: false };
+    } catch (error) {
+      console.error('Error checking phone number:', error);
+      // On error, don't block - let it proceed but log the error
+      return { exists: false, error };
+    }
+  };
+
   const handleNext = async () => {
     // Validate current step fields
     const currentStepFields = filteredSteps[currentStep]?.fields || [];
@@ -349,6 +414,20 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
         setError(phoneValidation.error);
         return;
       }
+
+      // Check if phone number already exists in both tables
+      setLoading(true);
+      const phoneCheck = await checkPhoneExistsInBothTables(formData.phone);
+      setLoading(false);
+      
+      if (phoneCheck.exists) {
+        setError(
+          language === 'hebrew'
+            ? 'מספר הטלפון כבר קיים במערכת. אנא השתמש במספר אחר.'
+            : 'This phone number is already registered. Please use a different number.'
+        );
+        return;
+      }
     }
 
     setError('');
@@ -373,11 +452,25 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
     setError('');
 
     try {
-      // Calculate age from date_of_birth
-      const age = calculateAge(formData.date_of_birth);
-
       // Collect all fields that were shown in the onboarding form
       const allOnboardingFields = filteredSteps.flatMap(step => step.fields);
+      
+      // Check if phone number already exists in both tables before saving
+      if (allOnboardingFields.includes('phone') && formData.phone && formData.phone.trim()) {
+        const phoneCheck = await checkPhoneExistsInBothTables(formData.phone);
+        if (phoneCheck.exists) {
+          setError(
+            language === 'hebrew'
+              ? 'מספר הטלפון כבר קיים במערכת. אנא השתמש במספר אחר.'
+              : 'This phone number is already registered. Please use a different number.'
+          );
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Calculate age from date_of_birth
+      const age = calculateAge(formData.date_of_birth);
       console.log('📝 Fields shown in onboarding:', allOnboardingFields);
       console.log('📋 Current formData:', formData);
       console.log('🔍 Gender check:', { 
@@ -472,20 +565,21 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
 
       // Prepare data for chat_users
       // Format phone for chat_users (same format as clients)
-      let formattedPhone = formData.phone;
-      if (formData.phone) {
-        let phoneNumber = formData.phone.trim().replace(/[-\s]/g, '');
+      let formattedPhone = null;
+      if (formData.phone && formData.phone.trim()) {
+        let phoneNumber = formData.phone.trim().replace(/[-\s]/g, ''); // Remove dashes and spaces
+        
+        // If phone starts with 0 and country code is +972 (Israel), remove the 0 and add +972
         if (phoneNumber.startsWith('0') && formData.phoneCountryCode === '+972') {
           phoneNumber = formData.phoneCountryCode + phoneNumber.substring(1);
         } else if (!phoneNumber.startsWith('+')) {
+          // If it doesn't start with +, prepend the country code
           phoneNumber = formData.phoneCountryCode + phoneNumber;
         }
         formattedPhone = phoneNumber;
       }
       
       const chatUserData = {
-        phone_number: formattedPhone,
-        whatsapp_number: formattedPhone,
         language: formData.language,
         user_language: formData.language,
         city: formData.city,
@@ -503,6 +597,12 @@ const OnboardingModal = ({ isOpen, onClose, user, userCode }) => {
         onboarding_done: true,
         updated_at: new Date().toISOString()
       };
+
+      // Set phone_number and whatsapp_number if phone was collected during onboarding
+      if (formattedPhone) {
+        chatUserData.phone_number = formattedPhone;
+        chatUserData.whatsapp_number = formattedPhone;
+      }
 
       console.log('💾 Saving to clients:', clientData);
       

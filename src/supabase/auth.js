@@ -1,49 +1,101 @@
 import { supabase, supabaseSecondary } from './supabaseClient'
 
-// Check if email already exists in clients table
+// Check if email already exists in both databases
 export const checkEmailExists = async (email) => {
   try {
-    console.log('Checking if email exists:', email);
+    const normalizedEmail = email.toLowerCase();
     
-    const { data, error } = await supabase
+    // Check PRIMARY database (clients table)
+    const { data: primaryData, error: primaryError } = await supabase
       .from('clients')
       .select('email')
-      .eq('email', email.toLowerCase())
+      .eq('email', normalizedEmail)
       .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error checking email:', error);
-      return { exists: false, error };
+    if (primaryError && primaryError.code !== 'PGRST116') {
+      return { exists: false, error: primaryError };
     }
 
-    const exists = !!data;
-    console.log('Email exists:', exists);
-    return { exists, error: null };
+    if (primaryData) {
+      return { exists: true, error: null };
+    }
+
+    // Check SECONDARY database (chat_users table) if available
+    if (supabaseSecondary) {
+      const { data: secondaryData, error: secondaryError } = await supabaseSecondary
+        .from('chat_users')
+        .select('email')
+        .eq('email', normalizedEmail)
+        .maybeSingle();
+
+      if (secondaryError && secondaryError.code !== 'PGRST116') {
+        return { exists: false, error: secondaryError };
+      }
+
+      if (secondaryData) {
+        return { exists: true, error: null };
+      }
+    }
+
+    return { exists: false, error: null };
   } catch (error) {
     console.error('Error checking email:', error);
     return { exists: false, error };
   }
 };
 
-// Check if phone number already exists in clients table
+// Check if phone number already exists in both databases
 export const checkPhoneExists = async (phone) => {
   try {
-    console.log('Checking if phone exists:', phone);
-    
-    const { data, error } = await supabase
+    // Check PRIMARY database (clients table)
+    const { data: primaryData, error: primaryError } = await supabase
       .from('clients')
       .select('phone')
       .eq('phone', phone)
       .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error checking phone:', error);
-      return { exists: false, error };
+    if (primaryError && primaryError.code !== 'PGRST116') {
+      return { exists: false, error: primaryError };
     }
 
-    const exists = !!data;
-    console.log('Phone exists:', exists);
-    return { exists, error: null };
+    if (primaryData) {
+      return { exists: true, error: null };
+    }
+
+    // Check SECONDARY database (chat_users table) - check both phone_number and whatsapp_number
+    if (supabaseSecondary) {
+      // Check phone_number column
+      const { data: secondaryDataByPhone, error: secondaryError1 } = await supabaseSecondary
+        .from('chat_users')
+        .select('phone_number, whatsapp_number')
+        .eq('phone_number', phone)
+        .maybeSingle();
+
+      if (secondaryError1 && secondaryError1.code !== 'PGRST116') {
+        return { exists: false, error: secondaryError1 };
+      }
+
+      if (secondaryDataByPhone) {
+        return { exists: true, error: null };
+      }
+
+      // Check whatsapp_number column
+      const { data: secondaryDataByWhatsApp, error: secondaryError2 } = await supabaseSecondary
+        .from('chat_users')
+        .select('phone_number, whatsapp_number')
+        .eq('whatsapp_number', phone)
+        .maybeSingle();
+
+      if (secondaryError2 && secondaryError2.code !== 'PGRST116') {
+        return { exists: false, error: secondaryError2 };
+      }
+
+      if (secondaryDataByWhatsApp) {
+        return { exists: true, error: null };
+      }
+    }
+
+    return { exists: false, error: null };
   } catch (error) {
     console.error('Error checking phone:', error);
     return { exists: false, error };
@@ -235,29 +287,47 @@ export const generateUniqueUserCode = async () => {
       userCode += letters.charAt(Math.floor(Math.random() * letters.length));
     }
 
-    // Check if this code already exists in the database
+    // Check if this code already exists in PRIMARY database (clients table)
     try {
-      const { data, error } = await supabase
+      const { data: primaryData, error: primaryError } = await supabase
         .from('clients')
         .select('user_code')
         .eq('user_code', userCode)
-        .single();
+        .maybeSingle();
 
-      // If no data found (error code PGRST116), the code is unique
-      if (error && error.code === 'PGRST116') {
-        console.log(`Generated unique user code: ${userCode}`);
-        return userCode;
-      }
-
-      // If no error, the code exists, try again
-      if (!error) {
-        console.log(`User code ${userCode} already exists, generating new one...`);
+      // If found in primary database, code exists - try again
+      if (primaryData) {
         attempts++;
         continue;
       }
 
-      // If there's a different error, throw it
-      throw error;
+      // If error other than "not found", throw it
+      if (primaryError && primaryError.code !== 'PGRST116') {
+        throw primaryError;
+      }
+
+      // Check SECONDARY database (chat_users table) if available
+      if (supabaseSecondary) {
+        const { data: secondaryData, error: secondaryError } = await supabaseSecondary
+          .from('chat_users')
+          .select('user_code')
+          .eq('user_code', userCode)
+          .maybeSingle();
+
+        // If found in secondary database, code exists - try again
+        if (secondaryData) {
+          attempts++;
+          continue;
+        }
+
+        // If error other than "not found", throw it
+        if (secondaryError && secondaryError.code !== 'PGRST116') {
+          throw secondaryError;
+        }
+      }
+
+      // Code is unique in both databases
+      return userCode;
     } catch (error) {
       console.error('Error checking user code uniqueness:', error);
       throw error;
@@ -270,33 +340,27 @@ export const generateUniqueUserCode = async () => {
 // Create client record in clients table and chat_users table
 export const createClientRecord = async (userId, userData) => {
   try {
-    console.log('Creating client record for user:', userId, 'with data:', userData);
-    
     // Generate unique user code
     const userCode = await generateUniqueUserCode();
-    console.log('Generated user code:', userCode);
     
     // Use the service role key for this operation
     const serviceRoleKey = process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY;
     
     if (!serviceRoleKey) {
-      console.warn('Service role key not found, using regular client');
       // Fallback to regular client
+      const clientInsertData = {
+        user_id: userId,
+        full_name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
+        email: userData.email,
+        phone: userData.phone,
+        user_code: userCode,
+        status: 'active'
+      };
+
       const { data, error } = await supabase
         .from('clients')
-        .insert([
-          {
-            user_id: userId,
-            full_name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
-            email: userData.email,
-            phone: userData.phone,
-            user_code: userCode,
-            status: 'active'
-          }
-        ])
+        .insert([clientInsertData])
         .select()
-
-      console.log('Client record creation result:', { data, error });
 
       if (error) {
         console.error('Client record creation error:', error);
@@ -304,49 +368,45 @@ export const createClientRecord = async (userId, userData) => {
       }
       
       // Also create record in chat_users table (secondary database)
+      let chatUserCreated = false;
+      let chatUserDataResult = null;
       if (supabaseSecondary && data && data[0]) {
         try {
-          console.log('Creating chat_users record for user_code:', userCode);
-          console.log('User platform:', userData.platform || 'web');
-          
           const chatUserData = {
             user_code: userCode,
             full_name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
             email: userData.email,
             phone_number: userData.phone,
-            platform: 'whatsapp',
+            whatsapp_number: userData.phone, // Also set whatsapp_number for WhatsApp registrations
+            platform: userData.platform || 'whatsapp',
             activated: false,
             is_verified: false,
             language: 'en',
             created_at: new Date().toISOString()
           };
 
-          console.log('Inserting into chat_users with data:', chatUserData);
-          const { data: chatUserDataResult, error: chatUserError } = await supabaseSecondary
+          const { data: chatUserResult, error: chatUserError } = await supabaseSecondary
             .from('chat_users')
             .insert([chatUserData])
             .select();
 
           if (chatUserError) {
-            console.error('Error creating chat_users record:', chatUserError);
-            console.error('Chat user error details:', JSON.stringify(chatUserError, null, 2));
             // Don't throw - continue even if chat_users creation fails
           } else {
-            console.log('✅ Chat user created successfully in secondary database!');
-            console.log('Chat user data:', chatUserDataResult);
+            chatUserCreated = true;
+            chatUserDataResult = chatUserResult;
           }
         } catch (chatError) {
-          console.error('Unexpected error creating chat_users record:', chatError);
           // Don't throw - continue even if chat_users creation fails
         }
-      } else {
-        console.warn('⚠️ Secondary Supabase client not available or no data returned');
-        console.log('supabaseSecondary available:', !!supabaseSecondary);
-        console.log('data available:', !!data);
-        console.log('data[0] available:', data && !!data[0]);
       }
       
-      return { data, error: null }
+      return { 
+        data, 
+        error: null,
+        chatUserCreated,
+        chatUserData: chatUserDataResult
+      }
     }
 
     // Use service role client for admin operations
@@ -356,21 +416,19 @@ export const createClientRecord = async (userId, userData) => {
       serviceRoleKey
     );
 
+    const clientInsertData = {
+      user_id: userId,
+      full_name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
+      email: userData.email,
+      phone: userData.phone,
+      user_code: userCode,
+      status: 'active'
+    };
+
     const { data, error } = await supabaseAdmin
       .from('clients')
-      .insert([
-        {
-          user_id: userId,
-          full_name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
-          email: userData.email,
-          phone: userData.phone,
-          user_code: userCode,
-          status: 'active'
-        }
-      ])
+      .insert([clientInsertData])
       .select()
-
-    console.log('Client record creation result:', { data, error });
 
     if (error) {
       console.error('Client record creation error:', error);
@@ -378,49 +436,45 @@ export const createClientRecord = async (userId, userData) => {
     }
     
     // Also create record in chat_users table (secondary database)
+    let chatUserCreated = false;
+    let chatUserDataResult = null;
     if (supabaseSecondary && data && data[0]) {
       try {
-        console.log('Creating chat_users record for user_code:', userCode);
-        console.log('User platform:', userData.platform || 'web');
-        
         const chatUserData = {
           user_code: userCode,
           full_name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
           email: userData.email,
           phone_number: userData.phone,
-          platform: 'whatsapp',
+          whatsapp_number: userData.phone, // Also set whatsapp_number for WhatsApp registrations
+          platform: userData.platform || 'whatsapp',
           activated: false,
           is_verified: false,
           language: 'en',
           created_at: new Date().toISOString()
         };
 
-        console.log('Inserting into chat_users with data:', chatUserData);
-        const { data: chatUserDataResult, error: chatUserError } = await supabaseSecondary
+        const { data: chatUserResult, error: chatUserError } = await supabaseSecondary
           .from('chat_users')
           .insert([chatUserData])
           .select();
 
         if (chatUserError) {
-          console.error('Error creating chat_users record:', chatUserError);
-          console.error('Chat user error details:', JSON.stringify(chatUserError, null, 2));
           // Don't throw - continue even if chat_users creation fails
         } else {
-          console.log('✅ Chat user created successfully in secondary database!');
-          console.log('Chat user data:', chatUserDataResult);
+          chatUserCreated = true;
+          chatUserDataResult = chatUserResult;
         }
       } catch (chatError) {
-        console.error('Unexpected error creating chat_users record:', chatError);
         // Don't throw - continue even if chat_users creation fails
       }
-    } else {
-      console.warn('⚠️ Secondary Supabase client not available or no data returned');
-      console.log('supabaseSecondary available:', !!supabaseSecondary);
-      console.log('data available:', !!data);
-      console.log('data[0] available:', data && !!data[0]);
     }
     
-    return { data, error: null }
+    return { 
+      data, 
+      error: null,
+      chatUserCreated,
+      chatUserData: chatUserDataResult
+    }
   } catch (error) {
     console.error('Create client record error:', error)
     return { data: null, error }

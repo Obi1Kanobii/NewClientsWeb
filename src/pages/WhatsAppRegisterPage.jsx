@@ -103,8 +103,7 @@ function WhatsAppRegisterPage() {
       return;
     }
 
-    // Check if email already exists
-    console.log('🔍 Checking if email already exists...');
+    // Check if email already exists in both databases
     const emailCheck = await checkEmailExists(formData.email);
     if (emailCheck.exists) {
       setError(
@@ -116,8 +115,7 @@ function WhatsAppRegisterPage() {
       return;
     }
 
-    // Check if phone number already exists
-    console.log('🔍 Checking if phone number already exists...');
+    // Check if phone number already exists in both databases
     const phoneCheck = await checkPhoneExists(phone);
     if (phoneCheck.exists) {
       setError(
@@ -129,8 +127,6 @@ function WhatsAppRegisterPage() {
       return;
     }
 
-    console.log('✅ Email and phone number are available!');
-
     try {
       const userData = {
         first_name: formData.firstName,
@@ -141,9 +137,6 @@ function WhatsAppRegisterPage() {
         platform: 'whatsapp' // Mark as WhatsApp registration
       };
 
-      console.log('🚀 Starting WhatsApp registration with phone:', phone);
-      console.log('📝 User data:', userData);
-      
       const { data, error } = await signUp(formData.email, formData.password, userData);
       
       if (error) {
@@ -152,16 +145,9 @@ function WhatsAppRegisterPage() {
         // Create client record in clients table
         if (data?.user?.id) {
           try {
-            console.log('✅ User authenticated successfully!');
-            console.log('👤 User ID:', data.user.id);
-            console.log('📧 Email:', data.user.email);
-            console.log('📱 Creating client record in BOTH databases...');
-            
             const clientResult = await createClientRecord(data.user.id, userData);
             
             if (clientResult.error) {
-              console.error('❌ Client record creation failed:', clientResult.error);
-              console.error('Error details:', JSON.stringify(clientResult.error, null, 2));
               setError(
                 language === 'hebrew' 
                   ? 'החשבון נוצר אבל לא ניתן ליצור רשומת לקוח. אנא פנה לתמיכה.' 
@@ -170,13 +156,28 @@ function WhatsAppRegisterPage() {
               return;
             }
             
-            console.log('✅ Client record created successfully in PRIMARY database!');
-            console.log('📊 Client data:', clientResult.data);
-            console.log('🎉 WhatsApp registration completed successfully!');
-            console.log('💾 User should now exist in BOTH Supabase databases');
+            if (clientResult.data && clientResult.chatUserCreated) {
+              setSuccess(
+                language === 'hebrew' 
+                  ? 'החשבון נוצר בהצלחה! בדוק את האימייל שלך לאישור.' 
+                  : 'Account created successfully! Please check your email for confirmation.'
+              );
+            } else if (clientResult.data && !clientResult.chatUserCreated) {
+              setError(
+                language === 'hebrew' 
+                  ? 'החשבון נוצר במסד הנתונים הראשי, אך לא ניתן ליצור רשומה במסד הנתונים השני. אנא פנה לתמיכה.' 
+                  : 'Account created in primary database, but failed to create record in secondary database. Please contact support.'
+              );
+              return;
+            } else {
+              setError(
+                language === 'hebrew' 
+                  ? 'לא ניתן ליצור רשומות במסדי הנתונים. אנא פנה לתמיכה.' 
+                  : 'Failed to create records in databases. Please contact support.'
+              );
+              return;
+            }
           } catch (clientError) {
-            console.error('❌ Failed to create client record:', clientError);
-            console.error('Error stack:', clientError.stack);
             setError(
               language === 'hebrew' 
                 ? 'החשבון נוצר אבל לא ניתן ליצור רשומת לקוח. אנא פנה לתמיכה.' 
@@ -185,15 +186,13 @@ function WhatsAppRegisterPage() {
             return;
           }
         } else {
-          console.error('❌ No user ID returned from signup');
-          console.log('Signup data:', data);
+          setError(
+            language === 'hebrew' 
+              ? 'החשבון נוצר אבל לא התקבל מזהה משתמש. אנא פנה לתמיכה.' 
+              : 'Account created but no user ID returned. Please contact support.'
+          );
+          return;
         }
-
-        setSuccess(
-          language === 'hebrew' 
-            ? 'החשבון נוצר בהצלחה! בדוק את האימייל שלך לאישור.' 
-            : 'Account created successfully! Please check your email for confirmation.'
-        );
         
         // Clear form
         setFormData({

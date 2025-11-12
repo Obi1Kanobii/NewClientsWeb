@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { signUp, createClientRecord, generateUniqueUserCode, checkEmailExists, checkPhoneExists, signInWithGoogle, signInWithFacebook } from '../supabase/auth';
+import { signUp, createClientRecord, generateUniqueUserCode, checkEmailExists, signInWithGoogle, signInWithFacebook } from '../supabase/auth';
 
 function SignupPage() {
   const { language, direction, t, isTransitioning, toggleLanguage } = useLanguage();
@@ -14,7 +14,6 @@ function SignupPage() {
     firstName: '',
     lastName: '',
     email: '',
-    phone: '',
     password: '',
     confirmPassword: '',
     agreeToTerms: false,
@@ -115,29 +114,13 @@ function SignupPage() {
       return;
     }
 
-    // Check if phone number already exists (only if phone is provided)
-    if (formData.phone) {
-      console.log('🔍 Checking if phone number already exists...');
-      const phoneCheck = await checkPhoneExists(formData.phone);
-      if (phoneCheck.exists) {
-        setError(
-          language === 'hebrew'
-            ? 'מספר הטלפון כבר קיים במערכת. אנא השתמש במספר אחר או התחבר.'
-            : 'This phone number is already registered. Please use a different number or login.'
-        );
-        setLoading(false);
-        return;
-      }
-    }
-
-    console.log('✅ Email and phone number are available!');
+    console.log('✅ Email is available!');
 
     try {
       const userData = {
         first_name: formData.firstName,
         last_name: formData.lastName,
         email: formData.email,
-        phone: formData.phone,
         newsletter: formData.newsletter
       };
 
@@ -182,7 +165,6 @@ function SignupPage() {
           firstName: '',
           lastName: '',
           email: '',
-          phone: '',
           password: '',
           confirmPassword: '',
           agreeToTerms: false,
@@ -317,23 +299,6 @@ function SignupPage() {
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 transition-colors duration-300 ${themeClasses.inputBg} ${themeClasses.inputFocus}`}
                     placeholder={language === 'hebrew' ? 'הכנס את כתובת האימייל שלך' : 'Enter your email address'}
                     value={formData.email}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                {/* Phone */}
-                <div>
-                  <label htmlFor="phone" className={`block text-sm font-medium ${themeClasses.textPrimary} mb-2`}>
-                    {t.contact.form.phone}
-                  </label>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    autoComplete="tel"
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 transition-colors duration-300 ${themeClasses.inputBg} ${themeClasses.inputFocus}`}
-                    placeholder={language === 'hebrew' ? 'הכנס את מספר הטלפון שלך' : 'Enter your phone number'}
-                    value={formData.phone}
                     onChange={handleInputChange}
                   />
                 </div>
