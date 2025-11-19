@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { useStripe } from '../context/StripeContext';
 import { supabase, supabaseSecondary } from '../supabase/supabaseClient';
-import { getMealPlan, debugMealPlans, getFoodLogs, createFoodLog, updateFoodLog, deleteFoodLog, getChatMessages, createChatMessage } from '../supabase/secondaryClient';
+import { getMealPlan, debugMealPlans, getFoodLogs, createFoodLog, updateFoodLog, deleteFoodLog, getChatMessages, createChatMessage, getCompaniesWithManagers, getClientCompanyAssignment, assignClientToCompany } from '../supabase/secondaryClient';
 import { normalizePhoneForDatabase } from '../supabase/auth';
 import { getAllProducts, getProductsByCategory, getProduct } from '../config/stripe-products';
 import PricingCard from '../components/PricingCard';
@@ -34,13 +34,62 @@ const ProfilePage = () => {
     region: '',
     city: '',
     timezone: '',
-    userLanguage: ''
+    userLanguage: '',
+    companyId: ''
   });
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [userCode, setUserCode] = useState(null);
+  const [companyOptions, setCompanyOptions] = useState([]);
+  const [isLoadingCompanies, setIsLoadingCompanies] = useState(false);
+  const [companyError, setCompanyError] = useState('');
+  const [assignedCompanyId, setAssignedCompanyId] = useState('');
+
+  const loadCompanyOptions = useCallback(async () => {
+    if (!supabaseSecondary) return;
+
+    try {
+      setIsLoadingCompanies(true);
+      setCompanyError('');
+      const { data, error } = await getCompaniesWithManagers();
+
+      if (error) {
+        setCompanyError(error.message || 'Failed to load companies');
+        setCompanyOptions([]);
+      } else {
+        setCompanyOptions(data || []);
+      }
+    } catch (error) {
+      console.error('Error loading companies:', error);
+      setCompanyError('Unexpected error while loading companies.');
+    } finally {
+      setIsLoadingCompanies(false);
+    }
+  }, []);
+
+  const loadCompanyAssignment = useCallback(async (currentUserCode) => {
+    if (!supabaseSecondary || !currentUserCode) return;
+
+    try {
+      const { data, error } = await getClientCompanyAssignment(currentUserCode);
+
+      if (error) {
+        console.error('Error fetching company assignment:', error);
+        return;
+      }
+
+      const companyId = data?.provider?.company_id || '';
+      setAssignedCompanyId(companyId || '');
+      setProfileData((prev) => ({
+        ...prev,
+        companyId: companyId || ''
+      }));
+    } catch (error) {
+      console.error('Unexpected error fetching company assignment:', error);
+    }
+  }, []);
 
   // Check onboarding status
   const checkOnboardingStatus = async () => {
@@ -112,6 +161,16 @@ const ProfilePage = () => {
     }
   }, [user, profileData.userCode]);
 
+  useEffect(() => {
+    loadCompanyOptions();
+  }, [loadCompanyOptions]);
+
+  useEffect(() => {
+    if (profileData.userCode) {
+      loadCompanyAssignment(profileData.userCode);
+    }
+  }, [profileData.userCode, loadCompanyAssignment]);
+
   // Sync web language with user's preferred language
   useEffect(() => {
     if (profileData.userLanguage) {
@@ -164,7 +223,8 @@ const ProfilePage = () => {
         const firstName = nameParts[0] || '';
         const lastName = nameParts.slice(1).join(' ') || '';
         
-        setProfileData({
+        setProfileData((prev) => ({
+          ...prev,
           firstName: firstName,
           lastName: lastName,
           email: data.email || user.email || '',
@@ -181,8 +241,9 @@ const ProfilePage = () => {
           region: data.region || '',
           city: data.city || '',
           timezone: data.timezone || '',
-          userLanguage: data.user_language || ''
-        });
+          userLanguage: data.user_language || '',
+          companyId: prev.companyId || ''
+        }));
 
         // Sync web language immediately after loading profile
         if (data.user_language) {
@@ -212,7 +273,8 @@ const ProfilePage = () => {
           email: user.email || '',
           newsletter: false,
           status: 'active',
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone // Default to user's timezone
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          companyId: prev.companyId || ''
         }));
       }
     } catch (error) {
@@ -347,8 +409,6 @@ const ProfilePage = () => {
         console.error('User-friendly error:', errorMessage);
       } else {
         console.log('Profile saved successfully:', data);
-        setSaveStatus('success');
-        setTimeout(() => setSaveStatus(''), 3000);
         
         // Sync to chat_users table (secondary database)
         if (supabaseSecondary && data && data[0] && profileData.userCode) {
@@ -397,6 +457,26 @@ const ProfilePage = () => {
             console.error('Error syncing to chat_users:', syncError);
             // Don't throw - continue even if sync fails
           }
+        }
+
+        let assignmentErrorMessage = '';
+        if (profileData.userCode && (profileData.companyId || '') !== (assignedCompanyId || '')) {
+          const { error: assignmentError } = await assignClientToCompany(profileData.userCode, profileData.companyId || null);
+          
+          if (assignmentError) {
+            assignmentErrorMessage = assignmentError.message || 'Failed to assign company manager. Please try again.';
+            console.error('Error assigning client to company manager:', assignmentError);
+          } else {
+            setAssignedCompanyId(profileData.companyId || '');
+          }
+        }
+
+        if (assignmentErrorMessage) {
+          setErrorMessage(assignmentErrorMessage);
+          setSaveStatus('error');
+        } else {
+          setSaveStatus('success');
+          setTimeout(() => setSaveStatus(''), 3000);
         }
       }
     } catch (error) {
@@ -705,7 +785,11 @@ const ProfilePage = () => {
               saveStatus={saveStatus}
               errorMessage={errorMessage}
               themeClasses={themeClasses}
-              t={t}
+            t={t}
+            companyOptions={companyOptions}
+            isLoadingCompanies={isLoadingCompanies}
+            companyError={companyError}
+            language={language}
             />
           )}
           {activeTab === 'myPlan' && (
@@ -735,7 +819,7 @@ const ProfilePage = () => {
 };
 
 // Profile Tab Component
-const ProfileTab = ({ profileData, onInputChange, onSave, isSaving, saveStatus, errorMessage, themeClasses, t }) => {
+const ProfileTab = ({ profileData, onInputChange, onSave, isSaving, saveStatus, errorMessage, themeClasses, t, companyOptions, isLoadingCompanies, companyError, language }) => {
   return (
     <div className={`${themeClasses.bgPrimary} min-h-screen p-4 sm:p-6 md:p-8 animate-fadeIn`}>
       {/* Header Section */}
@@ -1016,6 +1100,45 @@ const ProfileTab = ({ profileData, onInputChange, onSave, isSaving, saveStatus, 
                 </optgroup>
               </select>
             </div>
+          </div>
+
+          <div className="mt-6">
+            <label className={`${themeClasses.textSecondary} block text-sm font-semibold mb-2`}>
+              {language === 'hebrew' ? 'חברה (לא חובה)' : 'Company (optional)'}
+            </label>
+            {companyError && (
+              <p className="text-red-500 text-xs mb-2">
+                {companyError}
+              </p>
+            )}
+            <select
+              value={profileData.companyId || ''}
+              onChange={(e) => onInputChange('companyId', e.target.value)}
+              className={`w-full px-4 py-3 rounded-lg border-2 transition-all ${themeClasses.inputBg} ${themeClasses.inputFocus} ${themeClasses.textPrimary} focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800`}
+              disabled={isLoadingCompanies || (!isLoadingCompanies && companyOptions.length === 0)}
+            >
+              <option value="">{language === 'hebrew' ? 'ללא חברה' : 'No company'}</option>
+              {companyOptions.map((company) => (
+                <option key={company.id} value={company.id}>
+                  {company.name}
+                </option>
+              ))}
+            </select>
+            {isLoadingCompanies && (
+              <p className={`${themeClasses.textSecondary} text-xs mt-2`}>
+                {language === 'hebrew' ? 'טוען רשימת חברות...' : 'Loading companies...'}
+              </p>
+            )}
+            {!isLoadingCompanies && companyOptions.length === 0 && !companyError && (
+              <p className={`${themeClasses.textSecondary} text-xs mt-2`}>
+                {language === 'hebrew' ? 'לא נמצאו חברות זמינות' : 'No companies available'}
+              </p>
+            )}
+            <p className={`${themeClasses.textMuted} text-xs mt-2`}>
+              {language === 'hebrew'
+                ? 'בחירת חברה תחבר אותך אוטומטית למנהל החברה בצ׳אט.'
+                : 'Selecting a company automatically assigns you to that company’s manager in chat.'}
+            </p>
           </div>
 
           {/* Preferred Language */}

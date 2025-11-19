@@ -441,6 +441,104 @@ export const createChatMessage = async (userCode, messageData) => {
   }
 };
 
+// COMPANY MANAGEMENT
+export const getCompaniesWithManagers = async () => {
+  if (!isSecondaryAvailable()) return { data: null, error: { message: 'Secondary database not available' } };
+
+  try {
+    const { data, error } = await supabaseSecondary
+      .from('companies')
+      .select('id, name, managers:profiles!profiles_company_id_fkey(id, name, role)')
+      .order('name', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching companies:', error);
+      return { data: null, error };
+    }
+
+    const formattedCompanies = (data || []).map((company) => ({
+      id: company.id,
+      name: company.name,
+      managers: (company.managers || []).filter((manager) => manager.role === 'company_manager')
+    }));
+
+    return { data: formattedCompanies, error: null };
+  } catch (error) {
+    console.error('Unexpected error fetching companies:', error);
+    return { data: null, error };
+  }
+};
+
+export const getClientCompanyAssignment = async (userCode) => {
+  if (!isSecondaryAvailable()) return { data: null, error: { message: 'Secondary database not available' } };
+
+  try {
+    const { data, error } = await supabaseSecondary
+      .from('chat_users')
+      .select('provider_id, provider:profiles!chat_users_provider_id_fkey(id, name, company_id)')
+      .eq('user_code', userCode)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching client assignment:', error);
+      return { data: null, error };
+    }
+
+    return { data: data || null, error: null };
+  } catch (error) {
+    console.error('Unexpected error fetching client assignment:', error);
+    return { data: null, error };
+  }
+};
+
+export const assignClientToCompany = async (userCode, companyId) => {
+  if (!isSecondaryAvailable()) return { data: null, error: { message: 'Secondary database not available' } };
+
+  try {
+    let managerId = null;
+
+    if (companyId) {
+      const { data: manager, error: managerError } = await supabaseSecondary
+        .from('profiles')
+        .select('id')
+        .eq('company_id', companyId)
+        .eq('role', 'company_manager')
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .single();
+
+      if (managerError && managerError.code !== 'PGRST116') {
+        console.error('Error fetching company manager:', managerError);
+        return { data: null, error: managerError };
+      }
+
+      if (!manager) {
+        const customError = { message: 'No manager found for the selected company.' };
+        return { data: null, error: customError };
+      }
+
+      managerId = manager.id;
+    }
+
+    const { data, error } = await supabaseSecondary
+      .from('chat_users')
+      .update({ provider_id: managerId })
+      .eq('user_code', userCode)
+      .select('provider_id')
+      .single();
+
+    if (error) {
+      console.error('Error assigning provider to client:', error);
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    console.error('Unexpected error assigning provider:', error);
+    return { data: null, error };
+  }
+};
+
 export const getUserMealPlanHistory = async (userCode) => {
   if (!isSecondaryAvailable()) return { data: null, error: { message: 'Secondary database not available' } };
   
